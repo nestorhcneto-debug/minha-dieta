@@ -121,10 +121,10 @@ button{border-radius:12px}
 .grp .time{color:var(--c)}
 .grp .item:not(.ok):not(.no){border-left-color:var(--c)}
 .grp .item.rest{border-left-color:var(--line)}
-.kcal{background:none;color:var(--soft);font-family:inherit;font-weight:500;font-size:.78rem;padding:0}
+.kcal{background:none;color:var(--soft);font-family:inherit;font-weight:400;font-size:.72rem;padding:0;opacity:.75}
 .savebar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:18px;box-shadow:0 4px 18px rgba(10,20,40,.25)}
 .savebar .row button{flex:1}
-.savebar .go:not(:disabled){background:var(--ok);border-color:var(--ok);color:var(--on);font-weight:700}
+.psave:not(:disabled),.savebar .go:not(:disabled){background:var(--ok);border-color:var(--ok);color:var(--on);font-weight:700}
 .savebar p{margin:0 0 8px;font-size:.85rem;color:var(--soft)}
 .s-water .big,.s-sleep .big{color:var(--c)}
 .s-macro .rep{border-top:4px solid var(--c)}
@@ -376,14 +376,14 @@ function renderPlan(){
       '<label style="margin-top:10px"><input type="checkbox" data-f="opt"'+(m.opt?" checked":"")+'>Opcional (não conta como “não feito”)</label>'+
       '<button class="danger" data-del="'+esc(m.id)+'">Remover refeição</button></div>';
   });
-  h+='<button class="wide" data-add="1">+ Adicionar refeição</button>';
+  h+='<button class="wide" data-add="1">+ Adicionar refeição</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
   h+='<h2>Treinos</h2><div class="item"><p class="tag" style="margin:0 0 10px">Deixe o nome vazio nos dias de descanso.</p>';
   [1,2,3,4,5,6,0].forEach(function(i){var t=draft.treino[i];
     h+='<div class="wk"><b>'+DOW[i]+'</b><input type="text" placeholder="descanso" aria-label="Treino de '+DOW[i]+'" data-tw="'+i+'" data-f="n" value="'+esc(t.n)+'">'+
        '<input type="time" aria-label="Horário de '+DOW[i]+'" data-tw="'+i+'" data-f="t" value="'+esc(t.t)+'"></div>'});
-  h+='</div><h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
+  h+='<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button></div><h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
      '<label>Água por dia (litros)<input type="number" inputmode="decimal" min="0.5" step="0.25" data-meta="agua" value="'+draft.agua/1000+'"></label>'+
-     '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+draft.sono+'"></label></div></div>';
+     '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+draft.sono+'"></label></div><button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button></div>';
   h+='<h2>Cópia de segurança</h2><div class="item"><p class="tag" style="margin:0 0 10px">Os registros ficam salvos na sua conta. Você pode exportar uma cópia para guardar.</p>'+
      '<div class="row"><button data-exp="1">Exportar</button><button data-imp="1">Importar</button></div>'+
      '<input type="file" id="impFile" accept="application/json,.json" hidden></div>'+
@@ -404,7 +404,7 @@ function render(){
     var d=days[key(cur)]||{m:{}},done=REQ.filter(function(m){return d.m[m.id]===1}).length;
     sub=(isToday?"Hoje · ":"")+done+" de "+REQ.length+" refeições feitas";
   } else if(tab==="plano"){
-    sub="Monte o plano: refeições, treinos e metas. Depois de editar, toque em “Confirmar alterações” para salvar.";isToday=true;
+    sub="Monte o plano: refeições, treinos e metas. Depois de editar, toque em “Salvar” para gravar as alterações.";isToday=true;
   } else {
     var r=range();
     title=tab==="sem"
@@ -455,7 +455,7 @@ function importar(file){
 }
 function altOf(d,id){if(!d.alt)d.alt={};return d.alt[id]||(d.alt[id]={})}
 function mealById(id){return draft.meals.filter(function(m){return m.id===id})[0]}
-function markDirty(){planDirty=true;var a=$("pConf"),b=$("pDisc"),c=$("pState");if(a)a.disabled=false;if(b)b.disabled=false;if(c)c.textContent="Há alterações ainda não salvas."}
+function markDirty(){planDirty=true;var a=$("pConf"),b=$("pDisc"),c=$("pState");document.querySelectorAll(".psave").forEach(function(x){x.disabled=false});if(a)a.disabled=false;if(b)b.disabled=false;if(c)c.textContent="Há alterações ainda não salvas."}
 
 $("view").addEventListener("change",function(e){
   var t=e.target,ds=t.dataset;
