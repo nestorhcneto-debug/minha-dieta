@@ -250,7 +250,7 @@ function fixCfg(c){
 }
 function derive(){
   MEALS=cfg.meals.slice().sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1});
-  REQ=MEALS.filter(function(m){return !m.opt});
+  REQ=MEALS;
   PLAN={c:0,p:0,g:0};REQ.forEach(function(m){PLAN.c+=m.c||0;PLAN.p+=m.p||0;PLAN.g+=m.g||0});
 }
 function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
@@ -351,7 +351,7 @@ function renderDay(){
   MEALS.forEach(function(m){
     var v=d.m[m.id], lines=String(m.txt||"").split("\n").filter(function(l){return l.trim()});
     seq.push({t:m.t||"",h:'<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(m.t)+'</span><span class="name">'+esc(m.n)+
-      '</span>'+(m.opt?'<span class="tag">opcional</span>':'')+'<span class="kcal">'+kc(m.c,m.p,m.g)+' kcal</span></div>'+
+      '</span>'+'<span class="kcal">'+kc(m.c,m.p,m.g)+' kcal</span></div>'+
       (lines.length?'<details><summary>Ver o que comer</summary><ul>'+lines.map(function(i){return"<li>"+esc(i)+"</li>"}).join("")+'</ul></details>':'')+
       markHTML("m",m.id,v)+(v===0?altHTML(m.id,(d.alt||{})[m.id]||{}):'')+'</div>'});
   });
@@ -373,7 +373,7 @@ function renderDay(){
      '<div class="row" style="margin-top:10px"><button data-s="-0.5"'+(!hasS||so<=0?" disabled":"")+'>− 30 min</button><button data-s="0.5">+ 30 min</button>'+
      '<button data-s="clear"'+(!hasS?" disabled":"")+'>Limpar</button></div></div></section>';
   var mc=dayMac(d);
-  h+=secH("s-macro","Macronutrientes do dia")+macCard(mc,'Valores estimados. Plano completo (sem as refeições opcionais): cerca de '+kc(PLAN.c,PLAN.p,PLAN.g)+' kcal, '+PLAN.c+' g de carboidratos, '+PLAN.p+' g de proteínas e '+PLAN.g+' g de gorduras.'+
+  h+=secH("s-macro","Macronutrientes do dia")+macCard(mc,'Valores estimados. Plano completo: cerca de '+kc(PLAN.c,PLAN.p,PLAN.g)+' kcal, '+PLAN.c+' g de carboidratos, '+PLAN.p+' g de proteínas e '+PLAN.g+' g de gorduras.'+
     (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição não feita está':' refeições não feitas estão')+' sem macros preenchidos.</span>':''))+
     (MEALS.some(function(m){return d.m[m.id]===0})?'<button class="wide" data-calcall="1">Calcular calorias de todas as refeições não feitas</button>':'')+'</section>';
   $("view").innerHTML=h;
@@ -401,7 +401,7 @@ function renderReport(){
   var M=[0,0,0],T=[0,0,0],A=[0,0,0],S=[0,0,0],opt=0,sumA=0,nA=0,sumS=0,nS=0;
   for(var d=new Date(r[0]);d<=end;d=add(d,1)){
     n++;var x=days[key(d)]||{m:{}}, mo=0, mn=0;
-    MEALS.forEach(function(m){var v=x.m[m.id];if(m.opt){if(v===1)opt++}else if(v===1)mo++;else if(v===0)mn++});
+    MEALS.forEach(function(m){var v=x.m[m.id];if(v===1)mo++;else if(v===0)mn++});
     M[0]+=mo;M[1]+=mn;M[2]+=REQ.length-mo-mn;
     var tr=treino(d),tc='<span class="m">folga</span>';
     if(tr){if(x.ex===1){T[0]++;tc='<span class="g">✓</span>'}else if(x.ex===0){T[1]++;tc='<span class="r">✗</span>'}else{T[2]++;tc='<span class="m">–</span>'}}
@@ -442,7 +442,7 @@ function renderPlan(){
       '<div class="row3"><label>Carbo (g)<input type="number" inputmode="decimal" min="0" data-f="c" value="'+(m.c||0)+'"></label>'+
       '<label>Proteína (g)<input type="number" inputmode="decimal" min="0" data-f="p" value="'+(m.p||0)+'"></label>'+
       '<label>Gordura (g)<input type="number" inputmode="decimal" min="0" data-f="g" value="'+(m.g||0)+'"></label></div>'+
-      '<label style="margin-top:10px"><input type="checkbox" data-f="opt"'+(m.opt?" checked":"")+'>Opcional (não conta como “não feito”)</label>'+
+      
       '<button class="danger" data-del="'+esc(m.id)+'">Remover refeição</button></div>';
   });
   h+='<button class="wide" data-add="1">+ Adicionar refeição</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
