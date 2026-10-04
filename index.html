@@ -121,7 +121,11 @@ button{border-radius:12px}
 .grp .time{color:var(--c)}
 .grp .item:not(.ok):not(.no){border-left-color:var(--c)}
 .grp .item.rest{border-left-color:var(--line)}
-.kcal{background:var(--food);color:#fff}
+.kcal{background:none;color:var(--soft);font-family:inherit;font-weight:500;font-size:.78rem;padding:0}
+.savebar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px;margin-top:18px;box-shadow:0 4px 18px rgba(10,20,40,.25)}
+.savebar .row button{flex:1}
+.savebar .go:not(:disabled){background:var(--ok);border-color:var(--ok);color:var(--on);font-weight:700}
+.savebar p{margin:0 0 8px;font-size:.85rem;color:var(--soft)}
 .s-water .big,.s-sleep .big{color:var(--c)}
 .s-macro .rep{border-top:4px solid var(--c)}
 </style>
@@ -205,7 +209,7 @@ var DEF={nome:"",agua:2500,sono:7,
  treino:{0:{n:"",t:""},1:{n:"",t:""},2:{n:"",t:""},3:{n:"",t:""},4:{n:"",t:""},5:{n:"",t:""},6:{n:"",t:""}}};
 var DOW=["dom","seg","ter","qua","qui","sex","sáb"];
 var cfg, days={}, tab="dia", cur=new Date(), MEALS, REQ, PLAN;
-var unsub=null, sec=null;
+var unsub=null, sec=null, draft=null, planDirty=false;
 var fb=null, uref=null, dirty={}, tDays=null, tCfg=null, pendingMsg="", lastCheck=0;
 cur.setHours(12,0,0,0);
 var $=function(id){return document.getElementById(id)};
@@ -323,7 +327,7 @@ function bar(label,ok,no,blank,extra){
     (extra?'<div class="tag" style="margin-top:6px">'+extra+'</div>':'')+'</div>';
 }
 function renderReport(){
-  var r=range(), end=r[1]>today()?today():r[1], rows="", n=0;
+  var r=range(), end=r[1], rows="", n=0;
   var mrows="",mt={c:0,p:0,g:0,kcal:0},nM=0;
   var M=[0,0,0],T=[0,0,0],A=[0,0,0],S=[0,0,0],opt=0,sumA=0,nA=0,sumS=0,nS=0;
   for(var d=new Date(r[0]);d<=end;d=add(d,1)){
@@ -361,7 +365,8 @@ function renderReport(){
 /* ---------- editor do plano ---------- */
 function renderPlan(){
   var h='<div class="ed"><h2 style="margin-top:4px">Refeições</h2>';
-  MEALS.forEach(function(m){
+  if(!draft)draft=plain(cfg);
+  draft.meals.slice().sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1}).forEach(function(m){
     h+='<div class="item" data-meal="'+esc(m.id)+'"><div class="g2"><label>Horário<input type="time" data-f="t" value="'+esc(m.t)+'"></label>'+
       '<label>Nome<input type="text" data-f="n" value="'+esc(m.n)+'"></label></div>'+
       '<label>O que comer (um item por linha)<textarea rows="4" data-f="txt">'+esc(m.txt)+'</textarea></label>'+
@@ -373,16 +378,19 @@ function renderPlan(){
   });
   h+='<button class="wide" data-add="1">+ Adicionar refeição</button>';
   h+='<h2>Treinos</h2><div class="item"><p class="tag" style="margin:0 0 10px">Deixe o nome vazio nos dias de descanso.</p>';
-  [1,2,3,4,5,6,0].forEach(function(i){var t=cfg.treino[i];
+  [1,2,3,4,5,6,0].forEach(function(i){var t=draft.treino[i];
     h+='<div class="wk"><b>'+DOW[i]+'</b><input type="text" placeholder="descanso" aria-label="Treino de '+DOW[i]+'" data-tw="'+i+'" data-f="n" value="'+esc(t.n)+'">'+
        '<input type="time" aria-label="Horário de '+DOW[i]+'" data-tw="'+i+'" data-f="t" value="'+esc(t.t)+'"></div>'});
   h+='</div><h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
-     '<label>Água por dia (litros)<input type="number" inputmode="decimal" min="0.5" step="0.25" data-meta="agua" value="'+cfg.agua/1000+'"></label>'+
-     '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+cfg.sono+'"></label></div></div>';
+     '<label>Água por dia (litros)<input type="number" inputmode="decimal" min="0.5" step="0.25" data-meta="agua" value="'+draft.agua/1000+'"></label>'+
+     '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+draft.sono+'"></label></div></div>';
   h+='<h2>Cópia de segurança</h2><div class="item"><p class="tag" style="margin:0 0 10px">Os registros ficam salvos na sua conta. Você pode exportar uma cópia para guardar.</p>'+
      '<div class="row"><button data-exp="1">Exportar</button><button data-imp="1">Importar</button></div>'+
      '<input type="file" id="impFile" accept="application/json,.json" hidden></div>'+
-     '<button class="wide" data-out="1" style="margin-top:16px">Sair da conta</button></div>';
+     '<button class="wide" data-out="1" style="margin-top:16px">Sair da conta</button>'+
+     '<div class="savebar"><p id="pState">'+(planDirty?"Há alterações ainda não salvas.":"Nenhuma alteração pendente.")+'</p><div class="row">'+
+     '<button data-discard="1" id="pDisc"'+(planDirty?"":" disabled")+'>Descartar</button>'+
+     '<button class="go" data-confirm="1" id="pConf"'+(planDirty?"":" disabled")+'>Confirmar alterações</button></div></div></div>';
   $("view").innerHTML=h;
 }
 
@@ -396,7 +404,7 @@ function render(){
     var d=days[key(cur)]||{m:{}},done=REQ.filter(function(m){return d.m[m.id]===1}).length;
     sub=(isToday?"Hoje · ":"")+done+" de "+REQ.length+" refeições feitas";
   } else if(tab==="plano"){
-    sub="Monte o plano: refeições, treinos e metas. As alterações são salvas na hora.";isToday=true;
+    sub="Monte o plano: refeições, treinos e metas. Depois de editar, toque em “Confirmar alterações” para salvar.";isToday=true;
   } else {
     var r=range();
     title=tab==="sem"
@@ -420,7 +428,11 @@ function move(dir){
 }
 $("prev").onclick=function(){move(-1)};
 $("next").onclick=function(){move(1)};
-document.querySelector(".tabs").onclick=function(e){var b=e.target.closest("button");if(b){tab=b.dataset.tab;render();window.scrollTo(0,0)}};
+document.querySelector(".tabs").onclick=function(e){var b=e.target.closest("button");if(b){
+  if(tab==="plano"&&b.dataset.tab!=="plano"&&planDirty&&!confirm("Você tem alterações no plano que não foram confirmadas. Sair sem salvar?"))return;
+  if(b.dataset.tab!=="plano"){draft=null;planDirty=false}
+  if(b.dataset.tab!==tab&&(b.dataset.tab==="sem"||b.dataset.tab==="mes"))cur=today();
+  tab=b.dataset.tab;render();window.scrollTo(0,0)}};
 $("sub").onclick=function(e){if(e.target.id==="goToday"){cur=today();render()}};
 $("nome").addEventListener("change",function(){cfg.nome=this.value.trim();saveCfg();document.title=cfg.nome?"Minha Dieta — "+cfg.nome:"Minha Dieta"});
 
@@ -436,13 +448,14 @@ function importar(file){
     try{var o=JSON.parse(fr.result);if(!o||o.app!=="minha-dieta"||!o.cfg||!o.days)throw 0;
       if(!confirm("Substituir o plano e os registros desta conta pelos do arquivo?"))return;
       cfg=fixCfg(o.cfg);days=o.days;Object.keys(days).forEach(function(k){if(!days[k].m)days[k].m={};dirty[k]=1});
-      saveCfg();save();$("nome").value=cfg.nome;setStatus("Cópia importada.");render();
+      draft=null;planDirty=false;saveCfg();save();$("nome").value=cfg.nome;setStatus("Cópia importada.");render();
     }catch(e){setStatus("Esse arquivo não é uma cópia válida do Minha Dieta.")}
   };
   fr.readAsText(file);
 }
 function altOf(d,id){if(!d.alt)d.alt={};return d.alt[id]||(d.alt[id]={})}
-function mealById(id){return cfg.meals.filter(function(m){return m.id===id})[0]}
+function mealById(id){return draft.meals.filter(function(m){return m.id===id})[0]}
+function markDirty(){planDirty=true;var a=$("pConf"),b=$("pDisc"),c=$("pState");if(a)a.disabled=false;if(b)b.disabled=false;if(c)c.textContent="Há alterações ainda não salvas."}
 
 $("view").addEventListener("change",function(e){
   var t=e.target,ds=t.dataset;
@@ -453,10 +466,10 @@ $("view").addEventListener("change",function(e){
       if(ds.f==="opt")m.opt=t.checked;
       else if(ds.f==="c"||ds.f==="p"||ds.f==="g"){var v=parseFloat(t.value);m[ds.f]=isFinite(v)&&v>=0?v:0}
       else m[ds.f]=t.value;
-      saveCfg();
-    } else if(ds.tw){cfg.treino[ds.tw][ds.f]=t.value.trim();saveCfg()}
+      markDirty();
+    } else if(ds.tw){draft.treino[ds.tw][ds.f]=t.value.trim();markDirty()}
     else if(ds.meta){var n=parseFloat(t.value);
-      if(isFinite(n)&&n>0){cfg[ds.meta]=ds.meta==="agua"?Math.round(n*1000):n;saveCfg()}}
+      if(isFinite(n)&&n>0){draft[ds.meta]=ds.meta==="agua"?Math.round(n*1000):n;markDirty()}}
     return;
   }
   var k=key(cur),d=rec(k);
@@ -469,12 +482,14 @@ $("view").addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   var ds=b.dataset;
   if(tab==="plano"){
-    if(ds.del){if(confirm("Remover esta refeição do plano?")){cfg.meals=cfg.meals.filter(function(m){return m.id!==ds.del});saveCfg();render()}}
-    else if(ds.add){cfg.meals.push({id:"m"+Date.now(),t:"23:00",n:"Nova refeição",txt:"",c:0,p:0,g:0});saveCfg();render();
+    if(ds.del){if(confirm("Remover esta refeição do plano?")){draft.meals=draft.meals.filter(function(m){return m.id!==ds.del});planDirty=true;render()}}
+    else if(ds.add){draft.meals.push({id:"m"+Date.now(),t:"23:00",n:"Nova refeição",txt:"",c:0,p:0,g:0});planDirty=true;render();
       var all=document.querySelectorAll("[data-meal]");if(all.length)all[all.length-1].scrollIntoView({behavior:"smooth",block:"center"})}
     else if(ds.exp)exportar();
     else if(ds.imp)$("impFile").click();
     else if(ds.out)fb.auth().signOut();
+    else if(ds.confirm){draft.nome=cfg.nome;cfg=fixCfg(plain(draft));draft=null;planDirty=false;saveCfg();render();setStatus("Plano atualizado.")}
+    else if(ds.discard){if(confirm("Descartar as alterações não confirmadas?")){draft=null;planDirty=false;render()}}
     return;
   }
   if(tab!=="dia")return;
@@ -526,7 +541,7 @@ async function enter(user){
   setStatus("Conectado como "+(pdoc.login||user.email||""));
   unsub=pref.onSnapshot(function(sn){var v=sn.exists?sn.data():null;
     if(!sn.metadata.fromCache&&(!v||v.ativo!==true)){pendingMsg=OFF;fb.auth().signOut()}},function(){pendingMsg=OFF;fb.auth().signOut()});
-  cur=today();tab="dia";$("boot").hidden=true;$("app").hidden=false;render();
+  draft=null;planDirty=false;cur=today();tab="dia";$("boot").hidden=true;$("app").hidden=false;render();
 }
 $("lform").addEventListener("submit",function(e){
   e.preventDefault();if(!fb)return;
