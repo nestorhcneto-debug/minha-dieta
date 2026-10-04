@@ -15,7 +15,7 @@
 :root{
   --bg:#f2f4f9; --card:#ffffff; --ink:#111827; --soft:#5a6478; --line:#dfe4ee;
   --ok:#0b9a55; --okbg:#d5f6e3; --no:#e02d3c; --nobg:#ffe0e2; --acc:#ffb703; --blank:#d5dbe7; --on:#ffffff;
-  --food:#f97316; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
+  --food:#f97316; --supl:#14b8a6; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
@@ -113,6 +113,9 @@ button{border-radius:12px}
 .mark .n[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:var(--on)}
 .grp{--c:var(--soft)}
 .grp+.grp{margin-top:30px;padding-top:22px;border-top:2px solid var(--line)}
+.s-supl{--c:var(--supl)}
+.days{display:flex;flex-wrap:wrap;gap:8px 14px;margin:2px 0 12px}
+.ed .days label{display:flex;align-items:center;margin:0;color:var(--ink)}
 .s-food{--c:var(--food)}.s-gym{--c:var(--gym)}.s-water{--c:var(--water)}.s-sleep{--c:var(--sleep)}.s-macro{--c:var(--macro)}
 .sec{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .sec .bar{width:8px;height:26px;border-radius:4px;background:var(--c);flex:none}
@@ -239,7 +242,9 @@ function saveCfg(){derive();
 }
 function fixCfg(c){
   var d=JSON.parse(JSON.stringify(DEF));
+  d.supl=[];
   if(!c||typeof c!=="object")return d;
+  if(!Array.isArray(c.supl))c.supl=[];
   if(!Array.isArray(c.meals))c.meals=d.meals;
   if(!c.treino||typeof c.treino!=="object")c.treino=d.treino;
   for(var i=0;i<7;i++)if(!c.treino[i])c.treino[i]={n:"",t:""};
@@ -253,6 +258,7 @@ function derive(){
   REQ=MEALS;
   PLAN={c:0,p:0,g:0};REQ.forEach(function(m){PLAN.c+=m.c||0;PLAN.p+=m.p||0;PLAN.g+=m.g||0});
 }
+function suplDia(d){var w=d.getDay();return (cfg.supl||[]).filter(function(x){return x.n&&(x.dias||[]).indexOf(w)>=0}).sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1})}
 function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
 function dayMac(x){var o={c:0,p:0,g:0,x:0,miss:0,any:false};
   MEALS.forEach(function(m){var v=x.m[m.id];
@@ -358,6 +364,13 @@ function renderDay(){
   seq.sort(function(a,b){return a.t<b.t?-1:a.t>b.t?1:0});
   var nd=REQ.filter(function(m){return d.m[m.id]===1}).length;
   var h=secH("s-food","Alimentação",nd+" de "+REQ.length)+seq.map(function(s){return s.h}).join("")+'</section>';
+  var sp=suplDia(cur),sv=d.s||{},sdone=sp.filter(function(x){return sv[x.id]===1}).length;
+  h+=secH("s-supl","Suplementação",sp.length?sdone+" de "+sp.length:"");
+  if(sp.length)sp.forEach(function(x){var v=sv[x.id];
+    h+='<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(x.t)+'</span><span class="name">'+esc(x.n)+'</span>'+
+      (x.o?'<span class="tag">'+esc(x.o)+'</span>':'')+'</div>'+markHTML("s",x.id,v)+'</div>'});
+  else h+='<div class="item rest"><div class="head"><span class="name">Nenhum suplemento para hoje</span></div></div>';
+  h+='</section>';
   h+=secH("s-gym","Treino",tr?(d.ex===1?"feito":d.ex===0?"não feito":""):"");
   if(tr) h+='<div class="item'+cls(d.ex)+'"><div class="head"><span class="time">'+esc(tr.t)+'</span><span class="name">'+esc(tr.n)+
       '</span></div>'+markHTML("ex","ex",d.ex)+'</div>';
@@ -398,11 +411,16 @@ function bar(label,ok,no,blank,extra){
 function renderReport(){
   var r=range(), end=r[1], rows="", n=0;
   var mrows="",mt={c:0,p:0,g:0,kcal:0},nM=0;
+  var SU=[0,0,0];
   var M=[0,0,0],T=[0,0,0],A=[0,0,0],S=[0,0,0],opt=0,sumA=0,nA=0,sumS=0,nS=0;
   for(var d=new Date(r[0]);d<=end;d=add(d,1)){
     n++;var x=days[key(d)]||{m:{}}, mo=0, mn=0;
     MEALS.forEach(function(m){var v=x.m[m.id];if(v===1)mo++;else if(v===0)mn++});
     M[0]+=mo;M[1]+=mn;M[2]+=REQ.length-mo-mn;
+    var sp=suplDia(d),xs=x.s||{},so_=0,sn_=0;
+    sp.forEach(function(q){if(xs[q.id]===1)so_++;else if(xs[q.id]===0)sn_++});
+    SU[0]+=so_;SU[1]+=sn_;SU[2]+=sp.length-so_-sn_;
+    var suc=!sp.length?'<span class="m">–</span>':(so_+sn_)?'<span class="'+(so_===sp.length?"g":sn_?"r":"")+'">'+so_+'/'+sp.length+'</span>':'<span class="m">–</span>';
     var tr=treino(d),tc='<span class="m">folga</span>';
     if(tr){if(x.ex===1){T[0]++;tc='<span class="g">✓</span>'}else if(x.ex===0){T[1]++;tc='<span class="r">✗</span>'}else{T[2]++;tc='<span class="m">–</span>'}}
     var ac='<span class="m">–</span>';
@@ -414,14 +432,15 @@ function renderReport(){
     if(dm.any){nM++;mt.c+=dm.c;mt.p+=dm.p;mt.g+=dm.g;mt.kcal+=dm.kcal;
       mrows+='<tr><td>'+dl+'</td><td>'+Math.round(dm.c)+' g</td><td>'+Math.round(dm.p)+' g</td><td>'+Math.round(dm.g)+' g</td><td>'+dm.kcal+'</td></tr>'}
     else mrows+='<tr><td>'+dl+'</td><td class="m">–</td><td class="m">–</td><td class="m">–</td><td class="m">–</td></tr>';
-    rows+='<tr><td>'+dl+'</td><td>'+mc+'</td><td>'+tc+'</td><td>'+ac+'</td><td>'+sc+'</td></tr>';
+    rows+='<tr><td>'+dl+'</td><td>'+mc+'</td><td>'+suc+'</td><td>'+tc+'</td><td>'+ac+'</td><td>'+sc+'</td></tr>';
   }
   if(!n){$("view").innerHTML='<div class="item rest">Este período ainda não começou.</div>';return}
   var h=bar("Refeições",M[0],M[1],M[2],opt?"Refeições opcionais feitas: "+opt:"")+
+    bar("Suplementos",SU[0],SU[1],SU[2],"")+
     bar("Treinos",T[0],T[1],T[2],"")+
     bar("Água — dias com "+fmtL(cfg.agua)+" L",A[0],A[1],A[2],nA?"Média nos dias registrados: "+fmtL(sumA/nA)+" L":"")+
     bar("Sono — noites com "+fmtH(cfg.sono)+" h ou mais",S[0],S[1],S[2],nS?"Média nas noites registradas: "+fmtH(sumS/nS)+" h":"")+
-    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   h+='<h2>Macronutrientes</h2>';
   if(nM){
     h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
@@ -446,6 +465,16 @@ function renderPlan(){
       '<button class="danger" data-del="'+esc(m.id)+'">Remover refeição</button></div>';
   });
   h+='<button class="wide" data-add="1">+ Adicionar refeição</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
+  h+='<h2>Suplementos</h2>';
+  (draft.supl||[]).forEach(function(x){
+    h+='<div class="item" data-supl="'+esc(x.id)+'"><div class="g2"><label>Horário<input type="time" data-sf="t" value="'+esc(x.t)+'"></label>'+
+      '<label>Suplemento<input type="text" data-sf="n" placeholder="Ex.: Creatina" value="'+esc(x.n)+'"></label></div>'+
+      '<label>Dose / observação<input type="text" data-sf="o" placeholder="Ex.: 5 g com água" value="'+esc(x.o)+'"></label>'+
+      '<label style="margin-bottom:4px">Dias de tomar</label><div class="days">'+[1,2,3,4,5,6,0].map(function(i){
+        return '<label><input type="checkbox" data-sd="'+i+'"'+((x.dias||[]).indexOf(i)>=0?" checked":"")+'>'+DOW[i]+'</label>'}).join("")+'</div>'+
+      '<button class="danger" data-sdel="'+esc(x.id)+'">Remover suplemento</button></div>';
+  });
+  h+='<button class="wide" data-sadd="1">+ Adicionar suplemento</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
   h+='<h2>Treinos</h2><div class="item"><p class="tag" style="margin:0 0 10px">Deixe o nome vazio nos dias de descanso.</p>';
   [1,2,3,4,5,6,0].forEach(function(i){var t=draft.treino[i];
     h+='<div class="wk"><b>'+DOW[i]+'</b><input type="text" placeholder="descanso" aria-label="Treino de '+DOW[i]+'" data-tw="'+i+'" data-f="n" value="'+esc(t.n)+'">'+
@@ -473,7 +502,7 @@ function render(){
     var d=days[key(cur)]||{m:{}},done=REQ.filter(function(m){return d.m[m.id]===1}).length;
     sub=(isToday?"Hoje · ":"")+done+" de "+REQ.length+" refeições feitas";
   } else if(tab==="plano"){
-    sub="Monte o plano: refeições, treinos e metas. Depois de editar, toque em “Salvar” para gravar as alterações.";isToday=true;
+    sub="Monte o plano: refeições, suplementos, treinos e metas. Depois de editar, toque em “Salvar” para gravar as alterações.";isToday=true;
   } else {
     var r=range();
     title=tab==="sem"
@@ -530,6 +559,11 @@ $("view").addEventListener("change",function(e){
   var t=e.target,ds=t.dataset;
   if(tab==="plano"){
     if(t.id==="impFile"){if(t.files&&t.files[0])importar(t.files[0]);return}
+    var sb=t.closest("[data-supl]");
+    if(sb){var su=draft.supl.filter(function(q){return q.id===sb.dataset.supl})[0];if(!su)return;
+      if(ds.sd!==undefined){var di=+ds.sd;su.dias=(su.dias||[]).filter(function(q){return q!==di});if(t.checked)su.dias.push(di)}
+      else if(ds.sf)su[ds.sf]=t.value.trim();
+      markDirty();return}
     var box=t.closest("[data-meal]");
     if(box&&ds.f){var m=mealById(box.dataset.meal);if(!m)return;
       if(ds.f==="opt")m.opt=t.checked;
@@ -551,6 +585,9 @@ $("view").addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   var ds=b.dataset;
   if(tab==="plano"){
+    if(ds.sdel){if(confirm("Remover este suplemento do plano?")){draft.supl=draft.supl.filter(function(q){return q.id!==ds.sdel});planDirty=true;render()}return}
+    if(ds.sadd){if(!draft.supl)draft.supl=[];draft.supl.push({id:"s"+Date.now(),n:"",o:"",t:"08:00",dias:[0,1,2,3,4,5,6]});planDirty=true;render();
+      var sl=document.querySelectorAll("[data-supl]");if(sl.length)sl[sl.length-1].scrollIntoView({behavior:"smooth",block:"center"});return}
     if(ds.del){if(confirm("Remover esta refeição do plano?")){draft.meals=draft.meals.filter(function(m){return m.id!==ds.del});planDirty=true;render()}}
     else if(ds.add){draft.meals.push({id:"m"+Date.now(),t:"23:00",n:"Nova refeição",txt:"",c:0,p:0,g:0});planDirty=true;render();
       var all=document.querySelectorAll("[data-meal]");if(all.length)all[all.length-1].scrollIntoView({behavior:"smooth",block:"center"})}
@@ -574,6 +611,7 @@ $("view").addEventListener("click",function(e){
   if(ds.k){
     var v=+ds.v;
     if(ds.k==="m"){if(d.m[ds.id]===v)delete d.m[ds.id];else d.m[ds.id]=v}
+    else if(ds.k==="s"){if(!d.s)d.s={};if(d.s[ds.id]===v)delete d.s[ds.id];else d.s[ds.id]=v}
     else{if(d.ex===v)delete d.ex;else d.ex=v}
   } else if(ds.w){d.agua=Math.max(0,(d.agua||0)+(+ds.w))}
   else if(ds.s){
