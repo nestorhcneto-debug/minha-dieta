@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Minha Dieta">
+<meta name="theme-color" content="#f6f1e4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161b15" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%97%3C/text%3E%3C/svg%3E">
+<title>Minha Dieta</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f6f1e4; --card:#fffdf7; --ink:#22301f; --soft:#66705f; --line:#e0d8c3;
+  --ok:#2f7d4f; --okbg:#dcefe0; --no:#b4472e; --nobg:#f6dfd6; --acc:#d99a1c; --blank:#e6dfcc;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#161b15; --card:#1f261e; --ink:#eee9da; --soft:#a3ab9a; --line:#333c31;
+    --ok:#6cc28c; --okbg:#21402c; --no:#e8876c; --nobg:#4a261c; --acc:#e9b441; --blank:#333a30;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161b15; --card:#1f261e; --ink:#eee9da; --soft:#a3ab9a; --line:#333c31;
+  --ok:#6cc28c; --okbg:#21402c; --no:#e8876c; --nobg:#4a261c; --acc:#e9b441; --blank:#333a30;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+h1,h2,.disp{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif}
+h1{font-size:1.7rem;line-height:1.1;margin:6px 0 2px;font-weight:700}
+h2{font-size:1.15rem;margin:26px 0 10px;font-weight:700}
+.status{font-size:.82rem;color:var(--soft);margin:0 0 14px}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 12px;min-height:42px}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button:disabled{opacity:.35;cursor:default}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:16px}
+.tabs button{flex:1;border:0;background:none;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.nav .t{flex:1;text-align:center;font-weight:700;font-size:1.1rem}
+.nav .t::first-letter{text-transform:uppercase}
+.sub{text-align:center;color:var(--soft);font-size:.9rem;margin:0 0 14px}
+.linkbtn{border:0;background:none;text-decoration:underline;min-height:0;padding:0 4px;color:var(--soft)}
+.item{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--blank);border-radius:12px;padding:12px;margin-bottom:10px}
+.item.ok{border-left-color:var(--ok)} .item.no{border-left-color:var(--no)}
+.item.rest{border-style:dashed;color:var(--soft)}
+.head{display:flex;gap:10px;align-items:baseline}
+.time{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;min-width:3.2em}
+.name{font-weight:600;flex:1}
+.tag{font-size:.78rem;color:var(--soft)}
+.mark{display:flex;gap:8px;margin-top:10px}
+.mark button{flex:1;font-weight:600}
+.mark .y[aria-pressed="true"]{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.mark .n[aria-pressed="true"]{background:var(--nobg);border-color:var(--no);color:var(--no)}
+details{margin-top:8px;font-size:.9rem}
+summary{color:var(--soft);cursor:pointer;padding:4px 0}
+details ul{margin:6px 0 0;padding-left:18px}
+details li{margin-bottom:4px}
+details p{margin:6px 0 0;color:var(--soft)}
+.meter{height:12px;border-radius:6px;background:var(--blank);overflow:hidden;margin:10px 0;display:flex}
+.meter i{display:block;height:100%}
+.big{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1}
+.rep{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.rep .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rep .top b{font-weight:600}
+.legend{font-size:.85rem;color:var(--soft);display:flex;flex-wrap:wrap;gap:4px 14px}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:5px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--soft);font-size:.8rem}
+tr:last-child td{border-bottom:0}
+.g{color:var(--ok);font-weight:600} .r{color:var(--no);font-weight:600} .m{color:var(--soft)}
+.kcal{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;background:var(--acc);color:#22301f;border-radius:999px;padding:3px 10px;font-size:.9rem;white-space:nowrap}
+.alt{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:.9rem}
+.alt label{display:block;color:var(--soft);margin-bottom:8px}
+textarea,input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px;width:100%;margin-top:4px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.mac{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.mac .big{font-size:1.25rem}
+[hidden]{display:none!important}
+
+.who{margin:0 0 6px}
+.who input{font-weight:600;font-size:1.05rem;background:var(--card)}
+input[type=checkbox]{width:auto;margin:0 8px 0 0}
+.ed label{display:block;color:var(--soft);font-size:.88rem;margin-bottom:8px}
+.g2{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.wk{display:grid;grid-template-columns:3.2em 1fr 7.5em;gap:8px;align-items:center;margin-bottom:8px}
+.wk input{margin-top:0}
+.danger{color:var(--no);border-color:var(--no);width:100%}
+.wide{width:100%;font-weight:600}
+</style>
+</head>
+<body>
+<main id="boot"><h1>Minha Dieta</h1><p class="status">Carregando…</p></main>
+<main id="login" hidden>
+  <h1>Minha Dieta</h1>
+  <p class="status">Entre com o login e a senha que você recebeu.</p>
+  <form id="lform" class="item ed">
+    <label>Login<input type="text" id="em" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></label>
+    <label>Senha<input type="password" id="pw" autocomplete="current-password" required></label>
+    <button type="submit" class="wide" id="entrar">Entrar</button>
+    <p class="r" id="lmsg" role="alert" style="margin:10px 0 0"></p>
+  </form>
+</main>
+<main id="admin" hidden>
+  <h1>Minha Dieta</h1>
+  <p class="status">Painel do administrador — acessos dos pacientes.</p>
+  <h2 style="margin-top:8px">Novo paciente</h2>
+  <form id="nform" class="item ed">
+    <label>Nome do paciente<input type="text" id="nNome" maxlength="80" required></label>
+    <label>Login (sem espaços, ex.: maria.silva)<input type="text" id="nLogin" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" required></label>
+    <label>Senha (mínimo de 6 caracteres)<input type="text" id="nPw" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" minlength="6" required></label>
+    <button type="submit" class="wide" id="criar">Criar acesso</button>
+    <p id="amsg" role="status" style="margin:10px 0 0"></p>
+  </form>
+  <h2>Acessos</h2>
+  <div id="plist"><p class="status">Carregando…</p></div>
+  <button class="wide" id="asair" style="margin-top:16px">Sair da conta</button>
+</main>
+<main id="app" hidden>
+  <h1>Minha Dieta</h1>
+  <div class="who"><input type="text" id="nome" placeholder="Nome do paciente" aria-label="Nome do paciente" autocomplete="name" maxlength="80"></div>
+  <p class="status" id="status"></p>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="dia" aria-selected="true">Dia</button>
+    <button role="tab" data-tab="sem" aria-selected="false">Semana</button>
+    <button role="tab" data-tab="mes" aria-selected="false">Mês</button>
+    <button role="tab" data-tab="plano" aria-selected="false">Plano</button>
+  </div>
+  <div class="nav" id="navbar">
+    <button id="prev" aria-label="Anterior">←</button>
+    <div class="t disp" id="title"></div>
+    <button id="next" aria-label="Próximo">→</button>
+  </div>
+  <p class="sub" id="sub"></p>
+  <div id="view"></div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================
+   COLE AQUI a configuração do seu projeto Firebase
+   (Console do Firebase → Configurações do projeto → Seus apps → Web)
+   ============================================================ */
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCYVDS-1cbN9NfAW6miSjF6tmzj_KyyZo4",
+  authDomain: "minha-dieta-a12ed.firebaseapp.com",
+  projectId: "minha-dieta-a12ed",
+  storageBucket: "minha-dieta-a12ed.firebasestorage.app",
+  messagingSenderId: "893038692797",
+  appId: "1:893038692797:web:764f2a98a0bd1ccac5aad4"
+};
+/* Login do administrador e domínio interno dos logins (iguais aos das regras do Firestore) */
+var ADMIN_LOGIN = "adm";
+var LOGIN_DOMAIN = "minhadieta.app";
+</script>
+<script>
+(function(){
+"use strict";
+var DEF={nome:"",agua:2500,sono:7,
+ meals:[
+ {id:"cafe",t:"07:00",n:"Café da manhã",c:0,p:0,g:0,txt:""},
+ {id:"lmanha",t:"10:00",n:"Lanche da manhã",c:0,p:0,g:0,txt:""},
+ {id:"almoco",t:"12:00",n:"Almoço",c:0,p:0,g:0,txt:""},
+ {id:"ltarde",t:"15:00",n:"Lanche da tarde",c:0,p:0,g:0,txt:""},
+ {id:"jantar",t:"19:30",n:"Jantar",c:0,p:0,g:0,txt:""},
+ {id:"ceia",t:"21:00",n:"Ceia",opt:true,c:0,p:0,g:0,txt:""}],
+ treino:{0:{n:"",t:""},1:{n:"",t:""},2:{n:"",t:""},3:{n:"",t:""},4:{n:"",t:""},5:{n:"",t:""},6:{n:"",t:""}}};
+var DOW=["dom","seg","ter","qua","qui","sex","sáb"];
+var cfg, days={}, tab="dia", cur=new Date(), MEALS, REQ, PLAN;
+var unsub=null, sec=null;
+var fb=null, uref=null, dirty={}, tDays=null, tCfg=null, pendingMsg="", lastCheck=0;
+cur.setHours(12,0,0,0);
+var $=function(id){return document.getElementById(id)};
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function num(v){return typeof v==="number"&&isFinite(v)}
+function kc(c,p,g){return Math.round(4*(c||0)+4*(p||0)+9*(g||0))}
+function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function today(){var d=new Date();d.setHours(12,0,0,0);return d}
+function add(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+function rec(k){dirty[k]=1;return days[k]||(days[k]={m:{}})}
+function fmtL(ml){return (ml/1000).toLocaleString("pt-BR",{maximumFractionDigits:2})}
+function fmtH(h){return h.toLocaleString("pt-BR",{maximumFractionDigits:1})}
+function setStatus(s){$("status").textContent=s}
+
+/* ---------- armazenamento (conta do paciente, na nuvem) ---------- */
+function okSt(){setStatus("Salvo na sua conta.")}
+function fail(e){setStatus(e&&e.code==="permission-denied"?"Acesso negado. Fale com quem administra o app.":"Não foi possível salvar agora. Verifique a internet.")}
+function plain(o){return JSON.parse(JSON.stringify(o))}
+function save(){
+  clearTimeout(tDays);
+  tDays=setTimeout(function(){var ks=Object.keys(dirty);dirty={};
+    ks.forEach(function(k){uref.collection("days").doc(k).set(plain(days[k]||{m:{}})).then(okSt,fail)})},600);
+}
+function saveCfg(){derive();
+  clearTimeout(tCfg);
+  tCfg=setTimeout(function(){uref.set({cfg:plain(cfg)},{merge:true}).then(okSt,fail)},600);
+}
+function fixCfg(c){
+  var d=JSON.parse(JSON.stringify(DEF));
+  if(!c||typeof c!=="object")return d;
+  if(!Array.isArray(c.meals))c.meals=d.meals;
+  if(!c.treino||typeof c.treino!=="object")c.treino=d.treino;
+  for(var i=0;i<7;i++)if(!c.treino[i])c.treino[i]={n:"",t:""};
+  if(!num(c.agua)||c.agua<=0)c.agua=d.agua;
+  if(!num(c.sono)||c.sono<=0)c.sono=d.sono;
+  if(typeof c.nome!=="string")c.nome="";
+  return c;
+}
+function derive(){
+  MEALS=cfg.meals.slice().sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1});
+  REQ=MEALS.filter(function(m){return !m.opt});
+  PLAN={c:0,p:0,g:0};REQ.forEach(function(m){PLAN.c+=m.c||0;PLAN.p+=m.p||0;PLAN.g+=m.g||0});
+}
+function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
+function dayMac(x){var o={c:0,p:0,g:0,miss:0,any:false};
+  MEALS.forEach(function(m){var v=x.m[m.id];
+    if(v===1){o.c+=m.c||0;o.p+=m.p||0;o.g+=m.g||0;o.any=true}
+    else if(v===0){var a=x.alt&&x.alt[m.id];
+      if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.any=true}else o.miss++}});
+  o.kcal=kc(o.c,o.p,o.g);return o}
+
+/* ---------- visão do dia ---------- */
+function markHTML(kind,id,v){
+  return '<div class="mark"><button class="y" data-k="'+kind+'" data-id="'+esc(id)+'" data-v="1" aria-pressed="'+(v===1)+'">✓ Feito</button>'+
+         '<button class="n" data-k="'+kind+'" data-id="'+esc(id)+'" data-v="0" aria-pressed="'+(v===0)+'">✗ Não feito</button></div>';
+}
+function altHTML(id,a){
+  function inp(i,l){return '<label>'+l+'<input type="number" inputmode="decimal" min="0" data-mac="'+esc(id)+'" data-i="'+i+'" value="'+(num(a[i])?a[i]:"")+'"></label>'}
+  return '<div class="alt"><label>O que você comeu no lugar?<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante. Deixe vazio se pulou a refeição.">'+esc(a.txt)+'</textarea></label>'+
+    '<div class="row3">'+inp("c","Carbo (g)")+inp("p","Proteína (g)")+inp("g","Gordura (g)")+'</div></div>';
+}
+function macCard(o,note){
+  function cell(v,l){return '<div><div class="big">'+v+'</div><div class="tag">'+l+'</div></div>'}
+  return '<div class="rep"><div class="mac">'+cell(Math.round(o.c)+" g","carboidratos")+cell(Math.round(o.p)+" g","proteínas")+cell(Math.round(o.g)+" g","gorduras")+cell(o.kcal,"kcal")+'</div>'+
+    '<div class="tag" style="margin-top:10px">'+note+'</div></div>';
+}
+function cls(v){return v===1?" ok":v===0?" no":""}
+function renderDay(){
+  var k=key(cur), d=days[k]||{m:{}}, tr=treino(cur), seq=[];
+  MEALS.forEach(function(m){
+    var v=d.m[m.id], lines=String(m.txt||"").split("\n").filter(function(l){return l.trim()});
+    seq.push({t:m.t||"",h:'<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(m.t)+'</span><span class="name">'+esc(m.n)+
+      '</span>'+(m.opt?'<span class="tag">opcional</span>':'')+'<span class="kcal">'+kc(m.c,m.p,m.g)+' kcal</span></div>'+
+      (lines.length?'<details><summary>Ver o que comer</summary><ul>'+lines.map(function(i){return"<li>"+esc(i)+"</li>"}).join("")+'</ul></details>':'')+
+      markHTML("m",m.id,v)+(v===0?altHTML(m.id,(d.alt||{})[m.id]||{}):'')+'</div>'});
+  });
+  if(tr) seq.push({t:tr.t,h:'<div class="item'+cls(d.ex)+'"><div class="head"><span class="time">'+esc(tr.t)+'</span><span class="name">'+esc(tr.n)+
+      '</span><span class="tag">treino</span></div>'+markHTML("ex","ex",d.ex)+'</div>'});
+  seq.sort(function(a,b){return a.t<b.t?-1:a.t>b.t?1:0});
+  var h=seq.map(function(s){return s.h}).join("");
+  if(!tr) h+='<div class="item rest"><div class="head"><span class="name">Sem treino hoje — dia de descanso</span></div></div>';
+  var ag=d.agua||0, pa=Math.min(100,ag/cfg.agua*100);
+  h+='<h2>Água</h2><div class="item'+(ag>=cfg.agua?" ok":"")+'"><div class="big">'+fmtL(ag)+' L <span class="tag">de '+fmtL(cfg.agua)+' L</span></div>'+
+     '<div class="meter"><i style="width:'+pa+'%;background:var(--ok)"></i></div>'+
+     '<div class="row"><button data-w="-250"'+(ag<=0?" disabled":"")+'>− 250 ml</button><button data-w="250">+ 250 ml</button><button data-w="500">+ 500 ml</button></div></div>';
+  var so=d.sono, hasS=num(so);
+  h+='<h2>Sono</h2><div class="item'+(hasS?(so>=cfg.sono?" ok":" no"):"")+'"><div class="big">'+(hasS?fmtH(so)+" h":"—")+
+     ' <span class="tag">na noite passada · meta: pelo menos '+fmtH(cfg.sono)+' h</span></div>'+
+     '<div class="row" style="margin-top:10px"><button data-s="-0.5"'+(!hasS||so<=0?" disabled":"")+'>− 30 min</button><button data-s="0.5">+ 30 min</button>'+
+     '<button data-s="clear"'+(!hasS?" disabled":"")+'>Limpar</button></div></div>';
+  var mc=dayMac(d);
+  h+='<h2>Macronutrientes do dia</h2>'+macCard(mc,'Valores estimados. Plano completo (sem as refeições opcionais): cerca de '+kc(PLAN.c,PLAN.p,PLAN.g)+' kcal, '+PLAN.c+' g de carboidratos, '+PLAN.p+' g de proteínas e '+PLAN.g+' g de gorduras.'+
+    (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição não feita está':' refeições não feitas estão')+' sem macros preenchidos.</span>':''));
+  $("view").innerHTML=h;
+}
+
+/* ---------- relatórios ---------- */
+function range(){
+  var a,b;
+  if(tab==="sem"){var w=(cur.getDay()+6)%7;a=add(cur,-w);b=add(a,6)}
+  else{a=new Date(cur.getFullYear(),cur.getMonth(),1,12);b=new Date(cur.getFullYear(),cur.getMonth()+1,0,12)}
+  return[a,b];
+}
+function bar(label,ok,no,blank,extra){
+  var tot=ok+no+blank||1;
+  return '<div class="rep"><div class="top"><b>'+label+'</b><span>'+ok+' de '+(ok+no+blank)+'</span></div>'+
+    '<div class="meter"><i style="width:'+ok/tot*100+'%;background:var(--ok)"></i><i style="width:'+no/tot*100+'%;background:var(--no)"></i></div>'+
+    '<div class="legend"><span><span class="dot" style="background:var(--ok)"></span>'+ok+' feito</span>'+
+    '<span><span class="dot" style="background:var(--no)"></span>'+no+' não feito</span>'+
+    '<span><span class="dot" style="background:var(--blank)"></span>'+blank+' sem registro</span></div>'+
+    (extra?'<div class="tag" style="margin-top:6px">'+extra+'</div>':'')+'</div>';
+}
+function renderReport(){
+  var r=range(), end=r[1]>today()?today():r[1], rows="", n=0;
+  var mrows="",mt={c:0,p:0,g:0,kcal:0},nM=0;
+  var M=[0,0,0],T=[0,0,0],A=[0,0,0],S=[0,0,0],opt=0,sumA=0,nA=0,sumS=0,nS=0;
+  for(var d=new Date(r[0]);d<=end;d=add(d,1)){
+    n++;var x=days[key(d)]||{m:{}}, mo=0, mn=0;
+    MEALS.forEach(function(m){var v=x.m[m.id];if(m.opt){if(v===1)opt++}else if(v===1)mo++;else if(v===0)mn++});
+    M[0]+=mo;M[1]+=mn;M[2]+=REQ.length-mo-mn;
+    var tr=treino(d),tc='<span class="m">folga</span>';
+    if(tr){if(x.ex===1){T[0]++;tc='<span class="g">✓</span>'}else if(x.ex===0){T[1]++;tc='<span class="r">✗</span>'}else{T[2]++;tc='<span class="m">–</span>'}}
+    var ac='<span class="m">–</span>';
+    if(x.agua>0){sumA+=x.agua;nA++;if(x.agua>=cfg.agua){A[0]++;ac='<span class="g">'+fmtL(x.agua)+' L</span>'}else{A[1]++;ac='<span class="r">'+fmtL(x.agua)+' L</span>'}}else A[2]++;
+    var sc='<span class="m">–</span>';
+    if(num(x.sono)){sumS+=x.sono;nS++;if(x.sono>=cfg.sono){S[0]++;sc='<span class="g">'+fmtH(x.sono)+' h</span>'}else{S[1]++;sc='<span class="r">'+fmtH(x.sono)+' h</span>'}}else S[2]++;
+    var mc=(mo+mn)?'<span class="'+(mo===REQ.length?"g":mn?"r":"")+'">'+mo+'/'+REQ.length+'</span>':'<span class="m">–</span>';
+    var dm=dayMac(x),dl=d.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
+    if(dm.any){nM++;mt.c+=dm.c;mt.p+=dm.p;mt.g+=dm.g;mt.kcal+=dm.kcal;
+      mrows+='<tr><td>'+dl+'</td><td>'+Math.round(dm.c)+' g</td><td>'+Math.round(dm.p)+' g</td><td>'+Math.round(dm.g)+' g</td><td>'+dm.kcal+'</td></tr>'}
+    else mrows+='<tr><td>'+dl+'</td><td class="m">–</td><td class="m">–</td><td class="m">–</td><td class="m">–</td></tr>';
+    rows+='<tr><td>'+dl+'</td><td>'+mc+'</td><td>'+tc+'</td><td>'+ac+'</td><td>'+sc+'</td></tr>';
+  }
+  if(!n){$("view").innerHTML='<div class="item rest">Este período ainda não começou.</div>';return}
+  var h=bar("Refeições",M[0],M[1],M[2],opt?"Refeições opcionais feitas: "+opt:"")+
+    bar("Treinos",T[0],T[1],T[2],"")+
+    bar("Água — dias com "+fmtL(cfg.agua)+" L",A[0],A[1],A[2],nA?"Média nos dias registrados: "+fmtL(sumA/nA)+" L":"")+
+    bar("Sono — noites com "+fmtH(cfg.sono)+" h ou mais",S[0],S[1],S[2],nS?"Média nas noites registradas: "+fmtH(sumS/nS)+" h":"")+
+    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  h+='<h2>Macronutrientes</h2>';
+  if(nM){
+    h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
+       macCard(mt,'Total ingerido no período (valores estimados).');
+  }
+  h+='<div class="scroll"><table><thead><tr><th>Dia</th><th>Carbo</th><th>Proteína</th><th>Gordura</th><th>kcal</th></tr></thead><tbody>'+mrows+'</tbody></table></div>';
+  $("view").innerHTML=h;
+}
+
+/* ---------- editor do plano ---------- */
+function renderPlan(){
+  var h='<div class="ed"><h2 style="margin-top:4px">Refeições</h2>';
+  MEALS.forEach(function(m){
+    h+='<div class="item" data-meal="'+esc(m.id)+'"><div class="g2"><label>Horário<input type="time" data-f="t" value="'+esc(m.t)+'"></label>'+
+      '<label>Nome<input type="text" data-f="n" value="'+esc(m.n)+'"></label></div>'+
+      '<label>O que comer (um item por linha)<textarea rows="4" data-f="txt">'+esc(m.txt)+'</textarea></label>'+
+      '<div class="row3"><label>Carbo (g)<input type="number" inputmode="decimal" min="0" data-f="c" value="'+(m.c||0)+'"></label>'+
+      '<label>Proteína (g)<input type="number" inputmode="decimal" min="0" data-f="p" value="'+(m.p||0)+'"></label>'+
+      '<label>Gordura (g)<input type="number" inputmode="decimal" min="0" data-f="g" value="'+(m.g||0)+'"></label></div>'+
+      '<label style="margin-top:10px"><input type="checkbox" data-f="opt"'+(m.opt?" checked":"")+'>Opcional (não conta como “não feito”)</label>'+
+      '<button class="danger" data-del="'+esc(m.id)+'">Remover refeição</button></div>';
+  });
+  h+='<button class="wide" data-add="1">+ Adicionar refeição</button>';
+  h+='<h2>Treinos</h2><div class="item"><p class="tag" style="margin:0 0 10px">Deixe o nome vazio nos dias de descanso.</p>';
+  [1,2,3,4,5,6,0].forEach(function(i){var t=cfg.treino[i];
+    h+='<div class="wk"><b>'+DOW[i]+'</b><input type="text" placeholder="descanso" aria-label="Treino de '+DOW[i]+'" data-tw="'+i+'" data-f="n" value="'+esc(t.n)+'">'+
+       '<input type="time" aria-label="Horário de '+DOW[i]+'" data-tw="'+i+'" data-f="t" value="'+esc(t.t)+'"></div>'});
+  h+='</div><h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
+     '<label>Água por dia (litros)<input type="number" inputmode="decimal" min="0.5" step="0.25" data-meta="agua" value="'+cfg.agua/1000+'"></label>'+
+     '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+cfg.sono+'"></label></div></div>';
+  h+='<h2>Cópia de segurança</h2><div class="item"><p class="tag" style="margin:0 0 10px">Os registros ficam salvos na sua conta. Você pode exportar uma cópia para guardar.</p>'+
+     '<div class="row"><button data-exp="1">Exportar</button><button data-imp="1">Importar</button></div>'+
+     '<input type="file" id="impFile" accept="application/json,.json" hidden></div>'+
+     '<button class="wide" data-out="1" style="margin-top:16px">Sair da conta</button></div>';
+  $("view").innerHTML=h;
+}
+
+/* ---------- moldura ---------- */
+function render(){
+  var t=today(), isToday=key(cur)===key(t), title="", sub="", nextOff=false;
+  $("navbar").hidden=tab==="plano";
+  if(tab==="dia"){
+    title=cur.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+    nextOff=cur>=t;
+    var d=days[key(cur)]||{m:{}},done=REQ.filter(function(m){return d.m[m.id]===1}).length;
+    sub=(isToday?"Hoje · ":"")+done+" de "+REQ.length+" refeições feitas";
+  } else if(tab==="plano"){
+    sub="Monte o plano: refeições, treinos e metas. As alterações são salvas na hora.";isToday=true;
+  } else {
+    var r=range();
+    title=tab==="sem"
+      ? r[0].toLocaleDateString("pt-BR",{day:"numeric",month:"short"})+" – "+r[1].toLocaleDateString("pt-BR",{day:"numeric",month:"short"})
+      : cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+    nextOff=r[1]>=t;
+    sub=(tab==="sem"?"Relatório semanal":"Relatório mensal")+(cfg.nome?" · "+esc(cfg.nome):"");
+  }
+  $("title").textContent=title;
+  $("sub").innerHTML=sub+(isToday?"":' · <button class="linkbtn" id="goToday">voltar para hoje</button>');
+  $("next").disabled=nextOff;
+  document.querySelectorAll(".tabs button").forEach(function(b){b.setAttribute("aria-selected",b.dataset.tab===tab)});
+  if(tab==="dia")renderDay();else if(tab==="plano")renderPlan();else renderReport();
+}
+function move(dir){
+  if(tab==="dia")cur=add(cur,dir);
+  else if(tab==="sem")cur=add(cur,7*dir);
+  else cur=new Date(cur.getFullYear(),cur.getMonth()+dir,1,12);
+  if(cur>today())cur=today();
+  render();
+}
+$("prev").onclick=function(){move(-1)};
+$("next").onclick=function(){move(1)};
+document.querySelector(".tabs").onclick=function(e){var b=e.target.closest("button");if(b){tab=b.dataset.tab;render();window.scrollTo(0,0)}};
+$("sub").onclick=function(e){if(e.target.id==="goToday"){cur=today();render()}};
+$("nome").addEventListener("change",function(){cfg.nome=this.value.trim();saveCfg();document.title=cfg.nome?"Minha Dieta — "+cfg.nome:"Minha Dieta"});
+
+function exportar(){
+  var blob=new Blob([JSON.stringify({app:"minha-dieta",cfg:cfg,days:days})],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="minha-dieta-"+key(today())+".json";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+}
+function importar(file){
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{var o=JSON.parse(fr.result);if(!o||o.app!=="minha-dieta"||!o.cfg||!o.days)throw 0;
+      if(!confirm("Substituir o plano e os registros desta conta pelos do arquivo?"))return;
+      cfg=fixCfg(o.cfg);days=o.days;Object.keys(days).forEach(function(k){if(!days[k].m)days[k].m={};dirty[k]=1});
+      saveCfg();save();$("nome").value=cfg.nome;setStatus("Cópia importada.");render();
+    }catch(e){setStatus("Esse arquivo não é uma cópia válida do Minha Dieta.")}
+  };
+  fr.readAsText(file);
+}
+function altOf(d,id){if(!d.alt)d.alt={};return d.alt[id]||(d.alt[id]={})}
+function mealById(id){return cfg.meals.filter(function(m){return m.id===id})[0]}
+
+$("view").addEventListener("change",function(e){
+  var t=e.target,ds=t.dataset;
+  if(tab==="plano"){
+    if(t.id==="impFile"){if(t.files&&t.files[0])importar(t.files[0]);return}
+    var box=t.closest("[data-meal]");
+    if(box&&ds.f){var m=mealById(box.dataset.meal);if(!m)return;
+      if(ds.f==="opt")m.opt=t.checked;
+      else if(ds.f==="c"||ds.f==="p"||ds.f==="g"){var v=parseFloat(t.value);m[ds.f]=isFinite(v)&&v>=0?v:0}
+      else m[ds.f]=t.value;
+      saveCfg();
+    } else if(ds.tw){cfg.treino[ds.tw][ds.f]=t.value.trim();saveCfg()}
+    else if(ds.meta){var n=parseFloat(t.value);
+      if(isFinite(n)&&n>0){cfg[ds.meta]=ds.meta==="agua"?Math.round(n*1000):n;saveCfg()}}
+    return;
+  }
+  var k=key(cur),d=rec(k);
+  if(ds.alt){altOf(d,ds.alt).txt=t.value.trim();save()}
+  else if(ds.mac){var a=altOf(d,ds.mac),x=parseFloat(t.value);
+    if(isFinite(x)&&x>=0)a[ds.i]=x;else delete a[ds.i];
+    save();render()}
+});
+$("view").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  var ds=b.dataset;
+  if(tab==="plano"){
+    if(ds.del){if(confirm("Remover esta refeição do plano?")){cfg.meals=cfg.meals.filter(function(m){return m.id!==ds.del});saveCfg();render()}}
+    else if(ds.add){cfg.meals.push({id:"m"+Date.now(),t:"23:00",n:"Nova refeição",txt:"",c:0,p:0,g:0});saveCfg();render();
+      var all=document.querySelectorAll("[data-meal]");if(all.length)all[all.length-1].scrollIntoView({behavior:"smooth",block:"center"})}
+    else if(ds.exp)exportar();
+    else if(ds.imp)$("impFile").click();
+    else if(ds.out)fb.auth().signOut();
+    return;
+  }
+  if(tab!=="dia")return;
+  var k=key(cur),d=rec(k);
+  if(ds.k){
+    var v=+ds.v;
+    if(ds.k==="m"){if(d.m[ds.id]===v)delete d.m[ds.id];else d.m[ds.id]=v}
+    else{if(d.ex===v)delete d.ex;else d.ex=v}
+  } else if(ds.w){d.agua=Math.max(0,(d.agua||0)+(+ds.w))}
+  else if(ds.s){
+    if(ds.s==="clear")delete d.sono;
+    else if(!num(d.sono))d.sono=cfg.sono;
+    else d.sono=Math.max(0,Math.min(16,d.sono+(+ds.s)));
+  } else return;
+  var open=[];document.querySelectorAll("#view details").forEach(function(x,i){if(x.open)open.push(i)});
+  save();render();
+  document.querySelectorAll("#view details").forEach(function(x,i){if(open.indexOf(i)>=0)x.open=true});
+});
+
+function toEmail(l){l=String(l||"").trim().toLowerCase();return l.indexOf("@")>=0?l:l+"@"+LOGIN_DOMAIN}
+function stopWatch(){if(unsub){unsub();unsub=null}}
+function showLogin(msg){
+  stopWatch();$("admin").hidden=true;
+  $("app").hidden=true;$("boot").hidden=true;$("login").hidden=false;
+  $("lmsg").textContent=msg||"";$("entrar").disabled=false;$("entrar").textContent="Entrar";$("pw").value="";
+}
+var OFF="Seu acesso está desativado. Fale com quem administra o app.";
+function blocked(e){return e&&(e.code==="auth/user-disabled"||e.code==="auth/user-token-expired"||e.code==="auth/user-not-found")}
+async function enter(user){
+  stopWatch();$("login").hidden=true;$("app").hidden=true;$("admin").hidden=true;$("boot").hidden=false;
+  try{await user.getIdToken(true);lastCheck=Date.now()}
+  catch(e){if(blocked(e)){pendingMsg=OFF;fb.auth().signOut();return}}
+  if(user.email===toEmail(ADMIN_LOGIN)){showAdmin();return}
+  var pref=fb.firestore().collection("pacientes").doc(user.uid),pdoc=null;
+  try{var ps=await pref.get();pdoc=ps.exists?ps.data():null}
+  catch(e){pendingMsg="Não foi possível verificar seu acesso. Verifique a internet e tente de novo.";fb.auth().signOut();return}
+  if(!pdoc||pdoc.ativo!==true){pendingMsg=OFF;fb.auth().signOut();return}
+  uref=fb.firestore().collection("users").doc(user.uid);
+  try{
+    var r=await Promise.all([uref.get(),uref.collection("days").get()]);
+    cfg=fixCfg(r[0].exists?(r[0].data()||{}).cfg:null);days={};dirty={};
+    r[1].forEach(function(d){var v=d.data()||{};if(!v.m)v.m={};days[d.id]=v});
+  }catch(e){
+    pendingMsg=e&&e.code==="permission-denied"?"Acesso negado. Fale com quem administra o app.":"Não foi possível carregar seus dados. Verifique a internet e tente de novo.";
+    fb.auth().signOut();return;
+  }
+  if(!cfg.nome&&pdoc.nome)cfg.nome=pdoc.nome;
+  derive();$("nome").value=cfg.nome;document.title=cfg.nome?"Minha Dieta — "+cfg.nome:"Minha Dieta";
+  setStatus("Conectado como "+(pdoc.login||user.email||""));
+  unsub=pref.onSnapshot(function(sn){var v=sn.exists?sn.data():null;
+    if(!sn.metadata.fromCache&&(!v||v.ativo!==true)){pendingMsg=OFF;fb.auth().signOut()}},function(){pendingMsg=OFF;fb.auth().signOut()});
+  cur=today();tab="dia";$("boot").hidden=true;$("app").hidden=false;render();
+}
+$("lform").addEventListener("submit",function(e){
+  e.preventDefault();if(!fb)return;
+  $("lmsg").textContent="";$("entrar").disabled=true;$("entrar").textContent="Entrando…";
+  fb.auth().signInWithEmailAndPassword(toEmail($("em").value),$("pw").value).catch(function(err){
+    var c=err&&err.code,m="Não foi possível entrar. Verifique a internet e tente de novo.";
+    if(c==="auth/user-disabled")m=OFF;
+    else if(c==="auth/invalid-credential"||c==="auth/wrong-password"||c==="auth/user-not-found"||c==="auth/invalid-email")m="Login ou senha incorretos.";
+    else if(c==="auth/too-many-requests")m="Muitas tentativas. Aguarde alguns minutos.";
+    showLogin(m);
+  });
+});
+document.addEventListener("visibilitychange",function(){
+  var u=fb&&fb.auth().currentUser;
+  if(document.visibilityState!=="visible"||!u||Date.now()-lastCheck<600000)return;
+  lastCheck=Date.now();
+  u.getIdToken(true).catch(function(e){if(blocked(e)){pendingMsg=OFF;fb.auth().signOut()}});
+});
+/* ---------- painel do administrador ---------- */
+function aMsg(t,bad){var e=$("amsg");e.textContent=t;e.className=bad?"r":"g"}
+function showAdmin(){
+  $("boot").hidden=true;$("login").hidden=true;$("app").hidden=true;$("admin").hidden=false;aMsg("");
+  document.title="Minha Dieta — Administrador";
+  unsub=fb.firestore().collection("pacientes").onSnapshot(function(snap){
+    var l=[];snap.forEach(function(d){var v=d.data()||{};v.uid=d.id;l.push(v)});
+    l.sort(function(a,b){return String(a.nome||"").localeCompare(String(b.nome||""),"pt-BR")});
+    var on=l.filter(function(p){return p.ativo===true}).length;
+    $("plist").innerHTML=l.length?'<p class="status">'+on+' ativo(s) · '+(l.length-on)+' bloqueado(s)</p>'+l.map(function(p){var a=p.ativo===true;
+      return '<div class="item '+(a?"ok":"no")+'"><div class="head"><span class="name">'+esc(p.nome)+'</span><span class="tag">'+(a?"ativo":"bloqueado")+'</span></div>'+
+        '<div class="tag">Login: '+esc(p.login)+'</div>'+
+        '<div class="mark"><button data-tog="'+esc(p.uid)+'" data-to="'+(a?0:1)+'">'+(a?"Bloquear acesso":"Reativar acesso")+'</button></div></div>'}).join("")
+      :'<p class="status">Nenhum paciente cadastrado ainda.</p>';
+  },function(){$("plist").innerHTML='<p class="r">Sem permissão para listar os pacientes. Confira as regras do Firestore e o login do administrador.</p>'});
+}
+$("plist").addEventListener("click",function(e){
+  var b=e.target.closest("button[data-tog]");if(!b)return;
+  var to=b.dataset.to==="1";
+  if(!to&&!confirm("Bloquear o acesso deste paciente?"))return;
+  b.disabled=true;
+  fb.firestore().collection("pacientes").doc(b.dataset.tog).update({ativo:to})
+    .then(function(){aMsg(to?"Acesso reativado.":"Acesso bloqueado.")},function(){b.disabled=false;aMsg("Não foi possível alterar. Verifique a internet.",true)});
+});
+$("asair").onclick=function(){fb.auth().signOut()};
+$("nform").addEventListener("submit",async function(e){
+  e.preventDefault();
+  var nome=$("nNome").value.trim(),login=$("nLogin").value.trim().toLowerCase(),pw=$("nPw").value;
+  if(!/^[a-z0-9._-]{3,30}$/.test(login)){aMsg("Login inválido: use de 3 a 30 letras minúsculas, números, ponto ou hífen, sem espaços.",true);return}
+  if(login===ADMIN_LOGIN){aMsg("Esse login é reservado ao administrador.",true);return}
+  if(pw.length<6){aMsg("A senha precisa ter pelo menos 6 caracteres.",true);return}
+  $("criar").disabled=true;aMsg("Criando acesso…");
+  try{
+    if(!sec){sec=fb.initializeApp(FIREBASE_CONFIG,"cadastro");await sec.auth().setPersistence(fb.auth.Auth.Persistence.NONE)}
+    var cred=await sec.auth().createUserWithEmailAndPassword(toEmail(login),pw);
+    await fb.firestore().collection("pacientes").doc(cred.user.uid).set({nome:nome,login:login,ativo:true,criado:Date.now()});
+    await sec.auth().signOut();
+    $("nform").reset();aMsg("Acesso criado para "+nome+" (login: "+login+").");
+  }catch(err){var c=err&&err.code;
+    aMsg(c==="auth/email-already-in-use"?"Esse login já existe. Escolha outro.":c==="auth/weak-password"?"Senha fraca: use pelo menos 6 caracteres.":
+      c==="permission-denied"?"Sem permissão. Confira as regras do Firestore.":"Não foi possível criar o acesso. Verifique a internet e tente de novo.",true)}
+  $("criar").disabled=false;
+});
+if(typeof firebase==="undefined"){showLogin("Não foi possível carregar o app. Verifique a internet e recarregue a página.");$("entrar").disabled=true}
+else if(FIREBASE_CONFIG.apiKey==="COLE_AQUI"){showLogin("Configuração do Firebase ausente: edite o arquivo e cole os dados do seu projeto.");$("entrar").disabled=true}
+else{
+  fb=firebase;fb.initializeApp(FIREBASE_CONFIG);
+  fb.firestore().enablePersistence({synchronizeTabs:true}).catch(function(){});
+  fb.auth().onAuthStateChanged(function(u){if(u)enter(u);else{var m=pendingMsg;pendingMsg="";showLogin(m)}});
+}
+})();
+</script>
+</body>
+</html>
