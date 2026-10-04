@@ -254,12 +254,78 @@ function derive(){
   PLAN={c:0,p:0,g:0};REQ.forEach(function(m){PLAN.c+=m.c||0;PLAN.p+=m.p||0;PLAN.g+=m.g||0});
 }
 function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
-function dayMac(x){var o={c:0,p:0,g:0,miss:0,any:false};
+function dayMac(x){var o={c:0,p:0,g:0,x:0,miss:0,any:false};
   MEALS.forEach(function(m){var v=x.m[m.id];
     if(v===1){o.c+=m.c||0;o.p+=m.p||0;o.g+=m.g||0;o.any=true}
     else if(v===0){var a=x.alt&&x.alt[m.id];
-      if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.any=true}else o.miss++}});
-  o.kcal=kc(o.c,o.p,o.g);return o}
+      if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.x+=a.x||0;o.any=true}else o.miss++}});
+  o.kcal=kc(o.c,o.p,o.g)+o.x;return o}
+
+/* ---------- tabela de alimentos (valores médios por 100 g: carbo|proteína|gordura|porção padrão em g|medidas|kcal de álcool) ---------- */
+var FOOD_ROWS=[
+"maçã|14|0.3|0.2|130","banana|23|1.1|0.3|90","laranja|12|0.9|0.1|150","mamão|11|0.5|0.1|150","manga|16|0.8|0.4|200","melancia|8|0.6|0.2|200",
+"melão|8|0.7|0.1|150","abacaxi|13|0.5|0.1|100","uva|17|0.7|0.2|100","morango|8|0.7|0.3|100","pera|15|0.4|0.1|150","abacate|9|2|15|100",
+"goiaba|14|2.6|1|120","tangerina,mexerica,bergamota|13|0.8|0.3|120","kiwi|15|1.1|0.5|75","fruta|14|0.7|0.2|120","salada de fruta|14|0.7|0.2|150",
+"arroz|28|2.5|0.3|100|colher:25;prato:150","arroz integral|26|2.6|1|100|colher:25;prato:150","feijão|14|5|0.5|90|colher:20;concha:90","feijoada|10|9|8|250",
+"macarrão,espaguete,massa|30|5|1|150|prato:220","lasanha|15|8|8|250","pão,paes,pao frances|55|9|3|50","pão de forma,pao integral,pao de forma integral|48|10|3.5|25",
+"pão de queijo,paes de queijo|34|5|14|30","torrada|70|11|5|8","tapioca|60|0|0|70","crepioca|32|8|6|80","cuscuz|25|2.2|0.7|100","panqueca|28|8|8|80",
+"batata doce|20|1.6|0.1|130","batata frita,fritas|36|4|15|100","batata|17|1.8|0.1|130","purê|15|2|4|100|colher:40","macaxeira,mandioca,aipim|30|1|0.3|100",
+"inhame|23|1.5|0.1|100","jerimum,abobora|6|1|0.1|100","aveia|66|14|8|15","granola|65|10|15|30","milho|19|3|1.2|100","pipoca|60|10|15|25|pote:50",
+"biscoito,bolacha|68|8|15|6","bolo|55|6|15|60","pizza|30|12|10|120","hambúrguer,x-burger,x-burguer,x burger,x salada,x-salada,x-tudo|25|13|12|200",
+"coxinha|28|9|14|100","pastel|30|8|18|80","salgado,salgadinho|30|8|15|80","empada|30|7|18|60","esfirra,esfiha|35|9|10|80","sanduíche,misto quente|28|10|8|150",
+"cachorro quente,cachorro-quente,hot dog|22|9|12|180","sushi|28|5|1|30","açaí|20|1|5|300","mingau|15|4|3|200","vitamina|14|3|2.5|250",
+"ovo|1|13|10|50","omelete|1|11|13|120","frango|0|30|4|130","frango frito|8|25|15|130","carne,bife,carne vermelha|0|27|12|120","carne moida|0|26|15|100",
+"carne de sol,charque|0|30|12|100","churrasco,picanha|0|26|18|150","porco,lombo|0|27|10|120","peixe,tilapia,file de peixe|0|24|5|130","salmão|0|22|13|130",
+"atum|0|26|3|120|lata:120","sardinha|0|24|11|85|lata:85","camarão|0|24|1|100","linguiça|2|16|25|80","salsicha|2|12|20|50","bacon|1|30|45|15",
+"presunto|2|16|5|15","peito de peru|2|16|2|15","strogonoff,estrogonofe|5|12|10|150|prato:250",
+"leite|5|3.2|3|200","iogurte|6|4|3|170","queijo,queijo coalho,queijo de coalho,mussarela,mucarela|2|23|25|30","requeijão|3|10|25|30|colher:30","ricota,creme de ricota|3|12|10|30|colher:15",
+"manteiga|0|0.5|82|10|colher:10","margarina|0|0|70|10|colher:10","creme de leite|4|2|22|15","leite condensado|55|7|8|20","whey,whey protein|8|75|6|30","sorvete|24|4|11|80",
+"refrigerante,coca,coca-cola,guarana|10.6|0|0|350|copo:200","refrigerante zero,coca zero|0|0|0|350","suco|11|0.5|0.1|200","água de coco|5|0|0|200","café,cha|0|0|0|50",
+"café_com_leite|5|2|2|200","achocolatado,nescau,toddy|12|3|2.5|200","energético|11|0|0|250","cerveja|3.5|0.4|0|350|copo:200;garrafa:600|28","vinho|2.6|0.1|0|150||72",
+"cachaça,vodka,whisky,gin,caipirinha|4|0|0|50|copo:200|200",
+"açúcar|100|0|0|5|colher:12","mel|82|0|0|15","chocolate|55|7|30|25","brigadeiro|60|5|15|20","doce de leite|55|7|7|20|colher:20","pudim|35|6|6|100","paçoca|50|15|25|20","goiabada|75|0.5|0|30",
+"salada,alface,tomate,pepino|4|1|0.2|80|prato:120","legume,legumes,verdura|7|1.5|0.2|80","cenoura|8|1|0.2|60","brócolis|4|3|0.4|60",
+"azeite,oleo|0|0|100|8|colher:8","maionese|5|1|40|12|colher:12","castanha|12|15|63|4","amendoim|16|26|49|30","pasta de amendoim|20|25|50|15","chia,semente de chia|42|17|31|10|colher:10",
+"sopa,caldo|6|3|2|300","barra de cereal|70|5|10|22","barra de proteína|35|30|15|45","farinha|80|1.5|0.3|15"];
+var FOODS=[];
+FOOD_ROWS.forEach(function(r){var f=r.split("|"),o={n:f[0].split(",")[0].replace(/_/g," "),c:+f[1],p:+f[2],g:+f[3],u:+f[4],un:{},a:+(f[6]||0)};
+  (f[5]||"").split(";").forEach(function(x){var y=x.split(":");if(y[1])o.un[y[0]]=+y[1]});
+  f[0].split(",").forEach(function(k){FOODS.push({re:new RegExp("(^|[^a-z_])"+norm(k).replace(/[-]/g,"[- ]")+"(s|es)?([^a-z_]|$)"),len:k.length,f:o})})});
+FOODS.sort(function(a,b){return b.len-a.len});
+var UNITS=[[/colher(es)?\s+de\s+cha/,"colhercha"],[/colher(es)?(\s+de\s+(sopa|sobremesa))?/,"colher"],[/fatias?/,"fatia"],[/copos?/,"copo"],[/xicaras?/,"xicara"],
+ [/lat(inh)?as?/,"lata"],[/long\s*neck/,"lata"],[/potes?/,"pote"],[/pratos?/,"prato"],[/conchas?/,"concha"],[/pedacos?/,"pedaco"],[/punhados?/,"punhado"],
+ [/doses?/,"dose"],[/tacas?/,"taca"],[/garrafas?/,"garrafa"],[/bolas?/,"bola"],[/scoops?/,"scoop"],[/unidades?/,"unidade"]];
+var GEN={colhercha:5,colher:15,copo:200,xicara:150,lata:350,pote:170,prato:300,concha:90,punhado:30,dose:50,taca:150,garrafa:600,bola:80,scoop:30};
+var NUMW={um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,meia:0.5,meio:0.5};
+function norm(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function estimar(txt){
+  var out={c:0,p:0,g:0,x:0,ok:[],bad:[]};
+  norm(txt).replace(/cafe com leite/g,"cafe_com_leite").split(/[,;+\n]|\s+e\s+|\s+com\s+|\s+mais\s+/).forEach(function(ch){
+    ch=ch.trim();if(!ch)return;
+    var grams=null,m=ch.match(/(\d+(?:[.,]\d+)?)\s*(kg|gramas?|gr|g|ml|litros?|l)(?![a-z])/);
+    if(m){grams=parseFloat(m[1].replace(",","."))*(/^(kg|l)/.test(m[2])?1000:1);ch=ch.replace(m[0]," ")}
+    var unit=null;
+    for(var i=0;i<UNITS.length;i++){var um=ch.match(new RegExp("(^|[^a-z])"+UNITS[i][0].source+"([^a-z]|$)"));if(um){unit=UNITS[i][1];ch=ch.replace(um[0]," ");break}}
+    var qty=1,q=ch.match(/(\d+(?:[.,]\d+)?)/);
+    if(q)qty=parseFloat(q[1].replace(",","."));
+    else{var w=ch.split(/[^a-z]+/);for(var j=0;j<w.length;j++)if(NUMW[w[j]]){qty=NUMW[w[j]];break}}
+    var food=null;for(var k=0;k<FOODS.length;k++)if(FOODS[k].re.test(ch)){food=FOODS[k].f;break}
+    if(!food){var lbl=ch.replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim();if(lbl)out.bad.push(lbl);return}
+    if(grams===null){var per=unit?(food.un[unit]||(GEN[unit]||food.u)):food.u;grams=qty*per}
+    var f=grams/100,x=food.a*f;
+    out.c+=food.c*f;out.p+=food.p*f;out.g+=food.g*f;out.x+=x;
+    out.ok.push(food.n+" "+Math.round(grams)+" g ≈ "+Math.round(kc(food.c*f,food.p*f,food.g*f)+x)+" kcal");
+  });
+  return out;
+}
+function calcAlt(d,id){
+  var a=altOf(d,id);if(!a.txt)return false;
+  var r=estimar(a.txt);
+  if(!r.ok.length){a.info="Não reconheci nenhum alimento. Preencha os gramas à mão.";return false}
+  a.c=Math.round(r.c*10)/10;a.p=Math.round(r.p*10)/10;a.g=Math.round(r.g*10)/10;a.x=Math.round(r.x);
+  a.info="Estimativa: "+r.ok.join("; ")+". Total ≈ "+(kc(a.c,a.p,a.g)+a.x)+" kcal."+(r.bad.length?" Não reconheci: "+r.bad.join(", ")+".":"");
+  return true;
+}
 
 /* ---------- visão do dia ---------- */
 function markHTML(kind,id,v){
@@ -269,7 +335,9 @@ function markHTML(kind,id,v){
 function altHTML(id,a){
   function inp(i,l){return '<label>'+l+'<input type="number" inputmode="decimal" min="0" data-mac="'+esc(id)+'" data-i="'+i+'" value="'+(num(a[i])?a[i]:"")+'"></label>'}
   return '<div class="alt"><label>O que você comeu no lugar?<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante. Deixe vazio se pulou a refeição.">'+esc(a.txt)+'</textarea></label>'+
-    '<div class="row3">'+inp("c","Carbo (g)")+inp("p","Proteína (g)")+inp("g","Gordura (g)")+'</div></div>';
+    '<button class="wide" data-calc="'+esc(id)+'">Calcular calorias</button>'+
+    '<div class="row3">'+inp("c","Carbo (g)")+inp("p","Proteína (g)")+inp("g","Gordura (g)")+'</div>'+
+    (a.info?'<p class="tag" style="margin:10px 0 0">'+esc(a.info)+'</p>':'')+'</div>';
 }
 function macCard(o,note){
   function cell(v,l){return '<div><div class="big">'+v+'</div><div class="tag">'+l+'</div></div>'}
@@ -306,7 +374,8 @@ function renderDay(){
      '<button data-s="clear"'+(!hasS?" disabled":"")+'>Limpar</button></div></div></section>';
   var mc=dayMac(d);
   h+=secH("s-macro","Macronutrientes do dia")+macCard(mc,'Valores estimados. Plano completo (sem as refeições opcionais): cerca de '+kc(PLAN.c,PLAN.p,PLAN.g)+' kcal, '+PLAN.c+' g de carboidratos, '+PLAN.p+' g de proteínas e '+PLAN.g+' g de gorduras.'+
-    (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição não feita está':' refeições não feitas estão')+' sem macros preenchidos.</span>':''))+'</section>';
+    (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição não feita está':' refeições não feitas estão')+' sem macros preenchidos.</span>':''))+
+    (MEALS.some(function(m){return d.m[m.id]===0})?'<button class="wide" data-calcall="1">Calcular calorias de todas as refeições não feitas</button>':'')+'</section>';
   $("view").innerHTML=h;
 }
 
@@ -494,6 +563,14 @@ $("view").addEventListener("click",function(e){
   }
   if(tab!=="dia")return;
   var k=key(cur),d=rec(k);
+  if(ds.calc||ds.calcall){
+    document.querySelectorAll("#view textarea[data-alt]").forEach(function(t){altOf(d,t.dataset.alt).txt=t.value.trim()});
+    var ids=ds.calc?[ds.calc]:MEALS.filter(function(m){return d.m[m.id]===0}).map(function(m){return m.id}),n=0;
+    ids.forEach(function(id){if(calcAlt(d,id))n++});
+    save();render();
+    setStatus(n?"Calorias calculadas por estimativa — ajuste os números se quiser.":"Escreva o que você comeu para calcular.");
+    return;
+  }
   if(ds.k){
     var v=+ds.v;
     if(ds.k==="m"){if(d.m[ds.id]===v)delete d.m[ds.id];else d.m[ds.id]=v}
