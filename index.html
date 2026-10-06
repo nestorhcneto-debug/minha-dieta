@@ -347,7 +347,7 @@ function hasAlt(a){return !!(a&&((a.txt&&String(a.txt).trim())||num(a.c)||num(a.
 function mst(x,m){var v=x.m[m.id];return v===1?"ok":v===0?(hasAlt(x.alt&&x.alt[m.id])?"sub":"skip"):null}
 function mcount(x){var o={ok:0,sub:0,skip:0};MEALS.forEach(function(m){var k=mst(x,m);if(k)o[k]++});return o}
 function mtext(x){var c=mcount(x),p=[];
-  if(c.sub||c.skip){p.push(c.ok+" no plano");if(c.sub)p.push(c.sub+(c.sub>1?" substituídas":" substituída"));if(c.skip)p.push(c.skip+(c.skip>1?" puladas":" pulada"))}
+  if(c.sub||c.skip){p.push(c.ok+" no plano");if(c.sub)p.push(c.sub+(c.sub>1?" substituídas":" substituída"));if(c.skip)p.push(c.skip+(c.skip>1?" não realizadas":" não realizada"))}
   return (c.ok+c.sub)+" de "+MEALS.length+" refeições realizadas"+(p.length?" ("+p.join(" · ")+")":"")}
 var NL_SUB="↔ Substituída",NL_NO="✗ Não feito";
 function setDiaSub(){var isT=key(cur)===key(today()),x=days[key(cur)]||{m:{}},c=mcount(x);
@@ -359,7 +359,7 @@ function markHTML(kind,id,v,nl){
 }
 function altHTML(id,a){
   function inp(i,l){return '<label>'+l+'<input type="number" inputmode="decimal" min="0" data-mac="'+esc(id)+'" data-i="'+i+'" value="'+(num(a[i])?a[i]:"")+'"></label>'}
-  return '<div class="alt"><label>O que você comeu no lugar? (deixe vazio se pulou a refeição)<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante">'+esc(a.txt)+'</textarea></label>'+
+  return '<div class="alt"><label>O que você comeu no lugar? (deixe vazio se não realizou a refeição)<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante">'+esc(a.txt)+'</textarea></label>'+
     '<button class="wide" data-calc="'+esc(id)+'">Calcular calorias</button>'+
     '<div class="row3">'+inp("c","Carbo (g)")+inp("p","Proteína (g)")+inp("g","Gordura (g)")+'</div>'+
     (a.info?'<p class="tag" style="margin:10px 0 0">'+esc(a.info)+'</p>':'')+'</div>';
@@ -460,18 +460,18 @@ function renderReport(){
   }
   if(!n){$("view").innerHTML='<div class="item rest">Este período ainda não começou.</div>';return}
   var mtot=M[0]+M[1]+M[2]+M[3]||1;
-  var h='<div class="rep"><div class="top"><b>Refeições</b><span>'+(M[0]+M[1])+' realizadas de '+(M[0]+M[1]+M[2]+M[3])+'</span></div>'+
+  var h='<div class="rep"><div class="top"><b>Refeições</b><span>'+(M[0]+M[1])+' realizadas · '+M[2]+(M[2]===1?' não realizada':' não realizadas')+' · de '+(M[0]+M[1]+M[2]+M[3])+'</span></div>'+
     '<div class="meter"><i style="width:'+M[0]/mtot*100+'%;background:var(--ok)"></i><i style="width:'+M[1]/mtot*100+'%;background:var(--sub)"></i><i style="width:'+M[2]/mtot*100+'%;background:var(--no)"></i></div>'+
     '<div class="legend"><span><span class="dot" style="background:var(--ok)"></span>'+M[0]+' conforme o plano</span>'+
     '<span><span class="dot" style="background:var(--sub)"></span>'+M[1]+(M[1]===1?' substituída':' substituídas')+'</span>'+
-    '<span><span class="dot" style="background:var(--no)"></span>'+M[2]+(M[2]===1?' pulada':' puladas')+'</span>'+
+    '<span><span class="dot" style="background:var(--no)"></span>'+M[2]+(M[2]===1?' não realizada':' não realizadas')+'</span>'+
     '<span><span class="dot" style="background:var(--blank)"></span>'+M[3]+' sem registro</span></div>'+
     '<div class="tag" style="margin-top:6px">Fidelidade ao plano: '+(M[0]+M[1]+M[2]?Math.round(M[0]/(M[0]+M[1]+M[2])*100)+'% das refeições registradas':'sem registros ainda')+'</div></div>'+
     bar("Suplementos",SU[0],SU[1],SU[2],"")+
     bar("Treinos",T[0],T[1],T[2],"")+
     bar("Água — dias com "+fmtL(cfg.agua)+" L",A[0],A[1],A[2],nA?"Média nos dias registrados: "+fmtL(sumA/nA)+" L":"")+
     bar("Sono — noites com "+fmtH(cfg.sono)+" h ou mais",S[0],S[1],S[2],nS?"Média nas noites registradas: "+fmtH(sumS/nS)+" h":"")+
-    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>plano · subst. · puladas</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>plano · subst. · não realiz.</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   h+='<h2>Macronutrientes</h2>';
   if(nM){
     h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
