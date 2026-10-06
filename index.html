@@ -120,6 +120,12 @@ button{border-radius:12px}
 .grp .item.sub:not(.ok):not(.no){border-left-color:var(--sub)}
 .item.sub .mark .n[aria-pressed="true"]{background:var(--sub);border-color:var(--sub);color:var(--on)}
 .a{color:var(--sub);font-weight:600}
+.scroll table{font-size:.8rem}
+.scroll th,.scroll td{padding:7px 2px}
+.scroll th:first-child,.scroll td:first-child{padding-left:8px}
+.scroll th:last-child,.scroll td:last-child{padding-right:8px}
+.scroll th{white-space:normal;font-size:.7rem;line-height:1.15;vertical-align:bottom}
+.tnote{font-size:.78rem;color:var(--soft);margin:8px 2px 0}
 .mark.m3 button{font-size:.84rem;padding:9px 4px;line-height:1.2}
 .mark .s[aria-pressed="true"]{background:var(--sub);border-color:var(--sub);color:var(--on)}
 .xrow{display:flex;gap:8px;align-items:flex-end;margin-top:4px}
@@ -464,11 +470,11 @@ function renderReport(){
     var tc=!tp.length?'<span class="m">folga</span>':(to_+tn_)?'<span class="'+(to_===tp.length?"g":tn_?"r":"")+'">'+to_+'/'+tp.length+'</span>':'<span class="m">–</span>';
     var xq=(x.xa||[]).length;XA+=xq;if(xq)tc=(tp.length?tc+' ':'')+'<span class="g">+'+xq+'</span>';
     var ac='<span class="m">–</span>';
-    if(x.agua>0){sumA+=x.agua;nA++;if(x.agua>=cfg.agua){A[0]++;ac='<span class="g">'+fmtL(x.agua)+' L</span>'}else{A[1]++;ac='<span class="r">'+fmtL(x.agua)+' L</span>'}}else A[2]++;
+    if(x.agua>0){sumA+=x.agua;nA++;if(x.agua>=cfg.agua){A[0]++;ac='<span class="g">'+fmtL(x.agua)+'L</span>'}else{A[1]++;ac='<span class="r">'+fmtL(x.agua)+'L</span>'}}else A[2]++;
     var sc='<span class="m">–</span>';
-    if(num(x.sono)){sumS+=x.sono;nS++;if(x.sono>=cfg.sono){S[0]++;sc='<span class="g">'+fmtH(x.sono)+' h</span>'}else{S[1]++;sc='<span class="r">'+fmtH(x.sono)+' h</span>'}}else S[2]++;
+    if(num(x.sono)){sumS+=x.sono;nS++;if(x.sono>=cfg.sono){S[0]++;sc='<span class="g">'+fmtH(x.sono)+'h</span>'}else{S[1]++;sc='<span class="r">'+fmtH(x.sono)+'h</span>'}}else S[2]++;
     var mc=(mo+ms+mn)?'<span class="g">'+mo+'</span> · <span class="a">'+ms+'</span> · <span class="r">'+mn+'</span>':'<span class="m">–</span>';
-    var dm=dayMac(x),dl=d.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
+    var dm=dayMac(x),dl=d.toLocaleDateString("pt-BR",{weekday:"short"}).replace(".","")+" "+String(d.getDate()).padStart(2,"0");
     if(dm.any){nM++;mt.c+=dm.c;mt.p+=dm.p;mt.g+=dm.g;mt.kcal+=dm.kcal;
       mrows+='<tr><td>'+dl+'</td><td>'+Math.round(dm.c)+' g</td><td>'+Math.round(dm.p)+' g</td><td>'+Math.round(dm.g)+' g</td><td>'+dm.kcal+'</td></tr>'}
     else mrows+='<tr><td>'+dl+'</td><td class="m">–</td><td class="m">–</td><td class="m">–</td><td class="m">–</td></tr>';
@@ -487,13 +493,13 @@ function renderReport(){
     bar("Treinos",T[0],T[1],T[2],XA?"Atividades adicionais registradas: "+XA:"")+
     bar("Água — dias com "+fmtL(cfg.agua)+" L",A[0],A[1],A[2],nA?"Média nos dias registrados: "+fmtL(sumA/nA)+" L":"")+
     bar("Sono — noites com "+fmtH(cfg.sono)+" h ou mais",S[0],S[1],S[2],nS?"Média nas noites registradas: "+fmtH(sumS/nS)+" h":"")+
-    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>feito · subst. · não realiz.</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>✓ · ↔ · ✗</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="tnote">Refeições: ✓ feitas · ↔ substituídas · ✗ não realizadas.</p>';
   h+='<h2>Macronutrientes</h2>';
   if(nM){
     h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
        macCard(mt,'Total ingerido no período (valores estimados).');
   }
-  h+='<div class="scroll"><table><thead><tr><th>Dia</th><th>Carbo</th><th>Proteína</th><th>Gordura</th><th>kcal</th></tr></thead><tbody>'+mrows+'</tbody></table></div>';
+  h+='<div class="scroll"><table><thead><tr><th>Dia</th><th>Carbo</th><th>Prot.</th><th>Gord.</th><th>kcal</th></tr></thead><tbody>'+mrows+'</tbody></table></div>';
   $("view").innerHTML=h;
 }
 
