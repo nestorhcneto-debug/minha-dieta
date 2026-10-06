@@ -15,18 +15,18 @@
 :root{
   --bg:#f2f4f9; --card:#ffffff; --ink:#111827; --soft:#5a6478; --line:#dfe4ee;
   --ok:#0b9a55; --okbg:#d5f6e3; --no:#e02d3c; --nobg:#ffe0e2; --acc:#ffb703; --blank:#d5dbe7; --on:#ffffff;
-  --food:#f97316; --sub:#c26a00; --subbg:#fdebc8; --supl:#14b8a6; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
+  --food:#f97316; --sub:#e8590c; --subbg:#ffe4d0; --supl:#14b8a6; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0b0f17; --card:#151b27; --ink:#f3f6fb; --soft:#9aa6ba; --line:#263044;
-    --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#fbbf24; --subbg:#45300a;
+    --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0b0f17; --card:#151b27; --ink:#f3f6fb; --soft:#9aa6ba; --line:#263044;
-  --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#fbbf24; --subbg:#45300a;
+  --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -120,6 +120,12 @@ button{border-radius:12px}
 .grp .item.sub:not(.ok):not(.no){border-left-color:var(--sub)}
 .item.sub .mark .n[aria-pressed="true"]{background:var(--sub);border-color:var(--sub);color:var(--on)}
 .a{color:var(--sub);font-weight:600}
+.mark.m3 button{font-size:.84rem;padding:9px 4px;line-height:1.2}
+.mark .s[aria-pressed="true"]{background:var(--sub);border-color:var(--sub);color:var(--on)}
+.xrow{display:flex;gap:8px;align-items:flex-end;margin-top:4px}
+.xrow label{flex:1;margin:0;color:var(--soft);font-size:.88rem}
+.xrow button{white-space:nowrap}
+.xdel{min-height:0;padding:4px 10px;font-size:.82rem}
 .s-food{--c:var(--food)}.s-gym{--c:var(--gym)}.s-water{--c:var(--water)}.s-sleep{--c:var(--sleep)}.s-macro{--c:var(--macro)}
 .sec{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .sec .bar{width:8px;height:26px;border-radius:4px;background:var(--c);flex:none}
@@ -269,9 +275,9 @@ function suplDia(d){var w=d.getDay();return (cfg.supl||[]).filter(function(x){re
 function treinoDia(d){var w=d.getDay();return (cfg.treinos||[]).filter(function(x){return x.n&&(x.dias||[]).indexOf(w)>=0}).sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1})}
 function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
 function dayMac(x){var o={c:0,p:0,g:0,x:0,miss:0,any:false};
-  MEALS.forEach(function(m){var v=x.m[m.id];
-    if(v===1){o.c+=m.c||0;o.p+=m.p||0;o.g+=m.g||0;o.any=true}
-    else if(v===0){var a=x.alt&&x.alt[m.id];
+  MEALS.forEach(function(m){var st=mst(x,m);
+    if(st==="ok"){o.c+=m.c||0;o.p+=m.p||0;o.g+=m.g||0;o.any=true}
+    else if(st==="sub"){var a=x.alt&&x.alt[m.id];
       if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.x+=a.x||0;o.any=true}
       else{var er=a&&a.txt?estimar(a.txt):null;if(er&&er.ok.length){o.c+=er.c;o.p+=er.p;o.g+=er.g;o.x+=er.x;o.any=true}else o.miss++}}});
   o.kcal=kc(o.c,o.p,o.g)+o.x;return o}
@@ -344,10 +350,14 @@ function calcAlt(d,id){
 
 /* ---------- visão do dia ---------- */
 function hasAlt(a){return !!(a&&((a.txt&&String(a.txt).trim())||num(a.c)||num(a.p)||num(a.g)))}
-function mst(x,m){var v=x.m[m.id];return v===1?"ok":v===0?(hasAlt(x.alt&&x.alt[m.id])?"sub":"skip"):null}
+function mst(x,m){var v=x.m[m.id];return v===1?"ok":v===2?"sub":v===0?(hasAlt(x.alt&&x.alt[m.id])?"sub":"skip"):null}
+function mealMark(id,st){
+  function b(c,v,on,l){return '<button class="'+c+'" data-k="m" data-id="'+esc(id)+'" data-v="'+v+'" aria-pressed="'+on+'">'+l+'</button>'}
+  return '<div class="mark m3">'+b("y",1,st==="ok","✓ Feito")+b("s",2,st==="sub","↔ Substituído")+b("n",0,st==="skip","✗ Não realizado")+'</div>';
+}
 function mcount(x){var o={ok:0,sub:0,skip:0};MEALS.forEach(function(m){var k=mst(x,m);if(k)o[k]++});return o}
 function mtext(x){var c=mcount(x),p=[];
-  if(c.sub||c.skip){p.push(c.ok+" no plano");if(c.sub)p.push(c.sub+(c.sub>1?" substituídas":" substituída"));if(c.skip)p.push(c.skip+(c.skip>1?" não realizadas":" não realizada"))}
+  if(c.sub||c.skip){p.push(c.ok+(c.ok===1?" feita":" feitas"));if(c.sub)p.push(c.sub+(c.sub>1?" substituídas":" substituída"));if(c.skip)p.push(c.skip+(c.skip>1?" não realizadas":" não realizada"))}
   return (c.ok+c.sub)+" de "+MEALS.length+" refeições realizadas"+(p.length?" ("+p.join(" · ")+")":"")}
 var NL_SUB="↔ Substituída",NL_NO="✗ Não feito";
 function setDiaSub(){var isT=key(cur)===key(today()),x=days[key(cur)]||{m:{}},c=mcount(x);
@@ -359,7 +369,7 @@ function markHTML(kind,id,v,nl){
 }
 function altHTML(id,a){
   function inp(i,l){return '<label>'+l+'<input type="number" inputmode="decimal" min="0" data-mac="'+esc(id)+'" data-i="'+i+'" value="'+(num(a[i])?a[i]:"")+'"></label>'}
-  return '<div class="alt"><label>O que você comeu no lugar? (deixe vazio se não realizou a refeição)<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante">'+esc(a.txt)+'</textarea></label>'+
+  return '<div class="alt"><label>O que você comeu no lugar?<textarea rows="2" data-alt="'+esc(id)+'" placeholder="Ex.: 2 fatias de pizza e 1 lata de refrigerante">'+esc(a.txt)+'</textarea></label>'+
     '<button class="wide" data-calc="'+esc(id)+'">Calcular calorias</button>'+
     '<div class="row3">'+inp("c","Carbo (g)")+inp("p","Proteína (g)")+inp("g","Gordura (g)")+'</div>'+
     (a.info?'<p class="tag" style="margin:10px 0 0">'+esc(a.info)+'</p>':'')+'</div>';
@@ -379,7 +389,7 @@ function renderDay(){
     seq.push({t:m.t||"",h:'<div class="item'+(st==="ok"?" ok":st==="sub"?" sub":st==="skip"?" no":"")+'"><div class="head"><span class="time">'+esc(m.t)+'</span><span class="name">'+esc(m.n)+
       '</span>'+'<span class="kcal">'+kc(m.c,m.p,m.g)+' kcal</span></div>'+
       (lines.length?'<details><summary>Ver o que comer</summary><ul>'+lines.map(function(i){return"<li>"+esc(i)+"</li>"}).join("")+'</ul></details>':'')+
-      markHTML("m",m.id,v,st==="sub"?NL_SUB:NL_NO)+(v===0?altHTML(m.id,(d.alt||{})[m.id]||{}):'')+'</div>'});
+      mealMark(m.id,st)+(st==="sub"?altHTML(m.id,(d.alt||{})[m.id]||{}):'')+'</div>'});
   });
   seq.sort(function(a,b){return a.t<b.t?-1:a.t>b.t?1:0});
   var mcn=mcount(d);
@@ -392,11 +402,16 @@ function renderDay(){
   else h+='<div class="item rest"><div class="head"><span class="name">Nenhum suplemento para hoje</span></div></div>';
   h+='</section>';
   var tp=treinoDia(cur),tv=d.t||{},tdone=tp.filter(function(x){return tv[x.id]===1}).length;
-  h+=secH("s-gym","Treino",tp.length?tdone+" de "+tp.length:"");
+  var xa=d.xa||[];
+  h+=secH("s-gym","Treino",(tp.length?tdone+" de "+tp.length:"")+(xa.length?(tp.length?" · ":"")+"+"+xa.length+(xa.length>1?" adicionais":" adicional"):""));
   if(tp.length)tp.forEach(function(x){var v=tv[x.id];
     h+='<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(x.t)+'</span><span class="name">'+esc(x.n)+'</span>'+
       (x.o?'<span class="tag">'+esc(x.o)+'</span>':'')+'</div>'+markHTML("t",x.id,v)+'</div>'});
-  else h+='<div class="item rest"><div class="head"><span class="name">Sem treino hoje — dia de descanso</span></div></div>';
+  else if(!xa.length)h+='<div class="item rest"><div class="head"><span class="name">Sem treino planejado para hoje</span></div></div>';
+  xa.forEach(function(q){h+='<div class="item ok"><div class="head"><span class="name">'+esc(q.n)+'</span><span class="tag">atividade adicional</span>'+
+    '<button class="xdel" data-xdel="'+esc(q.id)+'">Remover</button></div></div>'});
+  h+='<div class="xrow"><label>Atividades adicionais<input type="text" id="xaName" maxlength="80" placeholder="Ex.: caminhada de 30 min"></label>'+
+     '<button data-xadd="1">+ Adicionar</button></div>';
   h+='</section>';
   var ag=d.agua||0, pa=Math.min(100,ag/cfg.agua*100);
   h+=secH("s-water","Água")+'<div class="item'+(ag>=cfg.agua?" ok":"")+'"><div class="big">'+fmtL(ag)+' L <span class="tag">de '+fmtL(cfg.agua)+' L</span></div>'+
@@ -409,8 +424,8 @@ function renderDay(){
      '<button data-s="clear"'+(!hasS?" disabled":"")+'>Limpar</button></div></div></section>';
   var mc=dayMac(d);
   h+=secH("s-macro","Macronutrientes do dia")+macCard(mc,'Valores estimados. Plano completo: cerca de '+kc(PLAN.c,PLAN.p,PLAN.g)+' kcal, '+PLAN.c+' g de carboidratos, '+PLAN.p+' g de proteínas e '+PLAN.g+' g de gorduras.'+
-    (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição não feita está':' refeições não feitas estão')+' sem macros preenchidos.</span>':''))+
-    (MEALS.some(function(m){return d.m[m.id]===0})?'<button class="wide" data-calcall="1">Calcular calorias de todas as refeições não feitas</button>':'')+'</section>';
+    (mc.miss?' <span class="r">'+mc.miss+(mc.miss===1?' refeição substituída está':' refeições substituídas estão')+' sem macros preenchidos.</span>':''))+
+    (MEALS.some(function(m){return mst(d,m)==="sub"})?'<button class="wide" data-calcall="1">Calcular calorias de todas as refeições substituídas</button>':'')+'</section>';
   $("view").innerHTML=h;
 }
 
@@ -433,7 +448,7 @@ function bar(label,ok,no,blank,extra){
 function renderReport(){
   var r=range(), end=r[1], rows="", n=0;
   var mrows="",mt={c:0,p:0,g:0,kcal:0},nM=0;
-  var SU=[0,0,0];
+  var SU=[0,0,0],XA=0;
   var M=[0,0,0,0],T=[0,0,0],A=[0,0,0],S=[0,0,0],opt=0,sumA=0,nA=0,sumS=0,nS=0;
   for(var d=new Date(r[0]);d<=end;d=add(d,1)){
     n++;var x=days[key(d)]||{m:{}}, mo=0, mn=0;
@@ -447,6 +462,7 @@ function renderReport(){
     tp.forEach(function(q){if(xt[q.id]===1)to_++;else if(xt[q.id]===0)tn_++});
     T[0]+=to_;T[1]+=tn_;T[2]+=tp.length-to_-tn_;
     var tc=!tp.length?'<span class="m">folga</span>':(to_+tn_)?'<span class="'+(to_===tp.length?"g":tn_?"r":"")+'">'+to_+'/'+tp.length+'</span>':'<span class="m">–</span>';
+    var xq=(x.xa||[]).length;XA+=xq;if(xq)tc=(tp.length?tc+' ':'')+'<span class="g">+'+xq+'</span>';
     var ac='<span class="m">–</span>';
     if(x.agua>0){sumA+=x.agua;nA++;if(x.agua>=cfg.agua){A[0]++;ac='<span class="g">'+fmtL(x.agua)+' L</span>'}else{A[1]++;ac='<span class="r">'+fmtL(x.agua)+' L</span>'}}else A[2]++;
     var sc='<span class="m">–</span>';
@@ -462,16 +478,16 @@ function renderReport(){
   var mtot=M[0]+M[1]+M[2]+M[3]||1;
   var h='<div class="rep"><div class="top"><b>Refeições</b><span>'+(M[0]+M[1])+' realizadas · '+M[2]+(M[2]===1?' não realizada':' não realizadas')+' · de '+(M[0]+M[1]+M[2]+M[3])+'</span></div>'+
     '<div class="meter"><i style="width:'+M[0]/mtot*100+'%;background:var(--ok)"></i><i style="width:'+M[1]/mtot*100+'%;background:var(--sub)"></i><i style="width:'+M[2]/mtot*100+'%;background:var(--no)"></i></div>'+
-    '<div class="legend"><span><span class="dot" style="background:var(--ok)"></span>'+M[0]+' conforme o plano</span>'+
+    '<div class="legend"><span><span class="dot" style="background:var(--ok)"></span>'+M[0]+(M[0]===1?' feita':' feitas')+' conforme o plano</span>'+
     '<span><span class="dot" style="background:var(--sub)"></span>'+M[1]+(M[1]===1?' substituída':' substituídas')+'</span>'+
     '<span><span class="dot" style="background:var(--no)"></span>'+M[2]+(M[2]===1?' não realizada':' não realizadas')+'</span>'+
     '<span><span class="dot" style="background:var(--blank)"></span>'+M[3]+' sem registro</span></div>'+
     '<div class="tag" style="margin-top:6px">Fidelidade ao plano: '+(M[0]+M[1]+M[2]?Math.round(M[0]/(M[0]+M[1]+M[2])*100)+'% das refeições registradas':'sem registros ainda')+'</div></div>'+
     bar("Suplementos",SU[0],SU[1],SU[2],"")+
-    bar("Treinos",T[0],T[1],T[2],"")+
+    bar("Treinos",T[0],T[1],T[2],XA?"Atividades adicionais registradas: "+XA:"")+
     bar("Água — dias com "+fmtL(cfg.agua)+" L",A[0],A[1],A[2],nA?"Média nos dias registrados: "+fmtL(sumA/nA)+" L":"")+
     bar("Sono — noites com "+fmtH(cfg.sono)+" h ou mais",S[0],S[1],S[2],nS?"Média nas noites registradas: "+fmtH(sumS/nS)+" h":"")+
-    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>plano · subst. · não realiz.</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>feito · subst. · não realiz.</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   h+='<h2>Macronutrientes</h2>';
   if(nM){
     h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
@@ -606,10 +622,7 @@ $("view").addEventListener("change",function(e){
     return;
   }
   var k=key(cur),d=rec(k);
-  if(ds.alt){altOf(d,ds.alt).txt=t.value.trim();save();
-    var card=t.closest(".item"),sb2=hasAlt(d.alt[ds.alt]);
-    if(card){card.classList.toggle("sub",sb2);card.classList.toggle("no",!sb2);var nb=card.querySelector(".mark .n");if(nb)nb.textContent=sb2?NL_SUB:NL_NO}
-    setDiaSub()}
+  if(ds.alt){altOf(d,ds.alt).txt=t.value.trim();save()}
   else if(ds.mac){var a=altOf(d,ds.mac),x=parseFloat(t.value);
     if(isFinite(x)&&x>=0)a[ds.i]=x;else delete a[ds.i];
     save();render()}
@@ -635,15 +648,20 @@ $("view").addEventListener("click",function(e){
   var k=key(cur),d=rec(k);
   if(ds.calc||ds.calcall){
     document.querySelectorAll("#view textarea[data-alt]").forEach(function(t){altOf(d,t.dataset.alt).txt=t.value.trim()});
-    var ids=ds.calc?[ds.calc]:MEALS.filter(function(m){return d.m[m.id]===0}).map(function(m){return m.id}),n=0;
+    var ids=ds.calc?[ds.calc]:MEALS.filter(function(m){return mst(d,m)==="sub"}).map(function(m){return m.id}),n=0;
     ids.forEach(function(id){if(calcAlt(d,id))n++});
     save();render();
     setStatus(n?"Calorias calculadas por estimativa — ajuste os números se quiser.":"Escreva o que você comeu para calcular.");
     return;
   }
+  if(ds.xadd){var xi=$("xaName"),xn_=xi?xi.value.trim():"";
+    if(!xn_){setStatus("Escreva o nome da atividade para adicionar.");if(xi)xi.focus();return}
+    if(!d.xa)d.xa=[];d.xa.push({id:"x"+Date.now(),n:xn_});save();render();return}
+  if(ds.xdel){d.xa=(d.xa||[]).filter(function(q){return q.id!==ds.xdel});save();render();return}
   if(ds.k){
     var v=+ds.v;
-    if(ds.k==="m"){if(d.m[ds.id]===v)delete d.m[ds.id];else d.m[ds.id]=v}
+    if(ds.k==="m"){var cs=mst(d,{id:ds.id}),ns=v===1?"ok":v===2?"sub":"skip";
+      if(cs===ns)delete d.m[ds.id];else{d.m[ds.id]=v;if(v===0&&d.alt)delete d.alt[ds.id]}}
     else if(ds.k==="s"||ds.k==="t"){var mk=ds.k;if(!d[mk])d[mk]={};if(d[mk][ds.id]===v)delete d[mk][ds.id];else d[mk][ds.id]=v}
     else{if(d.ex===v)delete d.ex;else d.ex=v}
   } else if(ds.w){d.agua=Math.max(0,(d.agua||0)+(+ds.w))}
