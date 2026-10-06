@@ -242,9 +242,12 @@ function saveCfg(){derive();
 }
 function fixCfg(c){
   var d=JSON.parse(JSON.stringify(DEF));
-  d.supl=[];
+  d.supl=[];d.treinos=[];
   if(!c||typeof c!=="object")return d;
   if(!Array.isArray(c.supl))c.supl=[];
+  if(!Array.isArray(c.treinos)){c.treinos=[];var gr={};
+    for(var j=0;j<7;j++){var o=c.treino&&c.treino[j];if(o&&o.n){var gk=o.n+"|"+(o.t||"");
+      if(!gr[gk]){gr[gk]={id:"t"+c.treinos.length,n:o.n,o:"",t:o.t||"",dias:[]};c.treinos.push(gr[gk])}gr[gk].dias.push(j)}}}
   if(!Array.isArray(c.meals))c.meals=d.meals;
   if(!c.treino||typeof c.treino!=="object")c.treino=d.treino;
   for(var i=0;i<7;i++)if(!c.treino[i])c.treino[i]={n:"",t:""};
@@ -259,12 +262,14 @@ function derive(){
   PLAN={c:0,p:0,g:0};REQ.forEach(function(m){PLAN.c+=m.c||0;PLAN.p+=m.p||0;PLAN.g+=m.g||0});
 }
 function suplDia(d){var w=d.getDay();return (cfg.supl||[]).filter(function(x){return x.n&&(x.dias||[]).indexOf(w)>=0}).sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1})}
+function treinoDia(d){var w=d.getDay();return (cfg.treinos||[]).filter(function(x){return x.n&&(x.dias||[]).indexOf(w)>=0}).sort(function(a,b){return (a.t||"")<(b.t||"")?-1:1})}
 function treino(d){var x=cfg.treino[d.getDay()];return x&&x.n?{t:x.t||"",n:x.n}:null}
 function dayMac(x){var o={c:0,p:0,g:0,x:0,miss:0,any:false};
   MEALS.forEach(function(m){var v=x.m[m.id];
     if(v===1){o.c+=m.c||0;o.p+=m.p||0;o.g+=m.g||0;o.any=true}
     else if(v===0){var a=x.alt&&x.alt[m.id];
-      if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.x+=a.x||0;o.any=true}else o.miss++}});
+      if(a&&(num(a.c)||num(a.p)||num(a.g))){o.c+=a.c||0;o.p+=a.p||0;o.g+=a.g||0;o.x+=a.x||0;o.any=true}
+      else{var er=a&&a.txt?estimar(a.txt):null;if(er&&er.ok.length){o.c+=er.c;o.p+=er.p;o.g+=er.g;o.x+=er.x;o.any=true}else o.miss++}}});
   o.kcal=kc(o.c,o.p,o.g)+o.x;return o}
 
 /* ---------- tabela de alimentos (valores médios por 100 g: carbo|proteína|gordura|porção padrão em g|medidas|kcal de álcool) ---------- */
@@ -371,9 +376,11 @@ function renderDay(){
       (x.o?'<span class="tag">'+esc(x.o)+'</span>':'')+'</div>'+markHTML("s",x.id,v)+'</div>'});
   else h+='<div class="item rest"><div class="head"><span class="name">Nenhum suplemento para hoje</span></div></div>';
   h+='</section>';
-  h+=secH("s-gym","Treino",tr?(d.ex===1?"feito":d.ex===0?"não feito":""):"");
-  if(tr) h+='<div class="item'+cls(d.ex)+'"><div class="head"><span class="time">'+esc(tr.t)+'</span><span class="name">'+esc(tr.n)+
-      '</span></div>'+markHTML("ex","ex",d.ex)+'</div>';
+  var tp=treinoDia(cur),tv=d.t||{},tdone=tp.filter(function(x){return tv[x.id]===1}).length;
+  h+=secH("s-gym","Treino",tp.length?tdone+" de "+tp.length:"");
+  if(tp.length)tp.forEach(function(x){var v=tv[x.id];
+    h+='<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(x.t)+'</span><span class="name">'+esc(x.n)+'</span>'+
+      (x.o?'<span class="tag">'+esc(x.o)+'</span>':'')+'</div>'+markHTML("t",x.id,v)+'</div>'});
   else h+='<div class="item rest"><div class="head"><span class="name">Sem treino hoje — dia de descanso</span></div></div>';
   h+='</section>';
   var ag=d.agua||0, pa=Math.min(100,ag/cfg.agua*100);
@@ -421,8 +428,10 @@ function renderReport(){
     sp.forEach(function(q){if(xs[q.id]===1)so_++;else if(xs[q.id]===0)sn_++});
     SU[0]+=so_;SU[1]+=sn_;SU[2]+=sp.length-so_-sn_;
     var suc=!sp.length?'<span class="m">–</span>':(so_+sn_)?'<span class="'+(so_===sp.length?"g":sn_?"r":"")+'">'+so_+'/'+sp.length+'</span>':'<span class="m">–</span>';
-    var tr=treino(d),tc='<span class="m">folga</span>';
-    if(tr){if(x.ex===1){T[0]++;tc='<span class="g">✓</span>'}else if(x.ex===0){T[1]++;tc='<span class="r">✗</span>'}else{T[2]++;tc='<span class="m">–</span>'}}
+    var tp=treinoDia(d),xt=x.t||{},to_=0,tn_=0;
+    tp.forEach(function(q){if(xt[q.id]===1)to_++;else if(xt[q.id]===0)tn_++});
+    T[0]+=to_;T[1]+=tn_;T[2]+=tp.length-to_-tn_;
+    var tc=!tp.length?'<span class="m">folga</span>':(to_+tn_)?'<span class="'+(to_===tp.length?"g":tn_?"r":"")+'">'+to_+'/'+tp.length+'</span>':'<span class="m">–</span>';
     var ac='<span class="m">–</span>';
     if(x.agua>0){sumA+=x.agua;nA++;if(x.agua>=cfg.agua){A[0]++;ac='<span class="g">'+fmtL(x.agua)+' L</span>'}else{A[1]++;ac='<span class="r">'+fmtL(x.agua)+' L</span>'}}else A[2]++;
     var sc='<span class="m">–</span>';
@@ -465,21 +474,21 @@ function renderPlan(){
       '<button class="danger" data-del="'+esc(m.id)+'">Remover refeição</button></div>';
   });
   h+='<button class="wide" data-add="1">+ Adicionar refeição</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
-  h+='<h2>Suplementos</h2>';
-  (draft.supl||[]).forEach(function(x){
-    h+='<div class="item" data-supl="'+esc(x.id)+'"><div class="g2"><label>Horário<input type="time" data-sf="t" value="'+esc(x.t)+'"></label>'+
-      '<label>Suplemento<input type="text" data-sf="n" placeholder="Ex.: Creatina" value="'+esc(x.n)+'"></label></div>'+
-      '<label>Dose / observação<input type="text" data-sf="o" placeholder="Ex.: 5 g com água" value="'+esc(x.o)+'"></label>'+
-      '<label style="margin-bottom:4px">Dias de tomar</label><div class="days">'+[1,2,3,4,5,6,0].map(function(i){
-        return '<label><input type="checkbox" data-sd="'+i+'"'+((x.dias||[]).indexOf(i)>=0?" checked":"")+'>'+DOW[i]+'</label>'}).join("")+'</div>'+
-      '<button class="danger" data-sdel="'+esc(x.id)+'">Remover suplemento</button></div>';
-  });
-  h+='<button class="wide" data-sadd="1">+ Adicionar suplemento</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
-  h+='<h2>Treinos</h2><div class="item"><p class="tag" style="margin:0 0 10px">Deixe o nome vazio nos dias de descanso.</p>';
-  [1,2,3,4,5,6,0].forEach(function(i){var t=draft.treino[i];
-    h+='<div class="wk"><b>'+DOW[i]+'</b><input type="text" placeholder="descanso" aria-label="Treino de '+DOW[i]+'" data-tw="'+i+'" data-f="n" value="'+esc(t.n)+'">'+
-       '<input type="time" aria-label="Horário de '+DOW[i]+'" data-tw="'+i+'" data-f="t" value="'+esc(t.t)+'"></div>'});
-  h+='<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button></div><h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
+  function listEd(lk,title,ph,oph,noun){
+    var o='<h2>'+title+'</h2>';
+    (draft[lk]||[]).forEach(function(x){
+      o+='<div class="item" data-supl="'+esc(x.id)+'" data-list="'+lk+'"><div class="g2"><label>Horário<input type="time" data-sf="t" value="'+esc(x.t)+'"></label>'+
+        '<label>Nome<input type="text" data-sf="n" placeholder="'+ph+'" value="'+esc(x.n)+'"></label></div>'+
+        '<label>'+(lk==="supl"?"Dose / observação":"Observação")+'<input type="text" data-sf="o" placeholder="'+oph+'" value="'+esc(x.o)+'"></label>'+
+        '<label style="margin-bottom:4px">Dias da semana</label><div class="days">'+[1,2,3,4,5,6,0].map(function(i){
+          return '<label><input type="checkbox" data-sd="'+i+'"'+((x.dias||[]).indexOf(i)>=0?" checked":"")+'>'+DOW[i]+'</label>'}).join("")+'</div>'+
+        '<button class="danger" data-sdel="'+esc(x.id)+'" data-list="'+lk+'">Remover '+noun+'</button></div>';
+    });
+    return o+'<button class="wide" data-sadd="'+lk+'">+ Adicionar '+noun+'</button>'+'<button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button>';
+  }
+  h+=listEd("supl","Suplementos","Ex.: Creatina","Ex.: 5 g com água","suplemento");
+  h+=listEd("treinos","Treinos","Ex.: Musculação","Ex.: 30 min de cardio depois","treino");
+  h+='<h2>Metas</h2><div class="item"><div class="g2" style="grid-template-columns:1fr 1fr">'+
      '<label>Água por dia (litros)<input type="number" inputmode="decimal" min="0.5" step="0.25" data-meta="agua" value="'+draft.agua/1000+'"></label>'+
      '<label>Sono mínimo (horas)<input type="number" inputmode="decimal" min="1" step="0.5" data-meta="sono" value="'+draft.sono+'"></label></div><button class="wide psave" data-confirm="1" style="margin-top:12px"'+(planDirty?"":" disabled")+'>Salvar</button></div>';
   h+='<h2>Cópia de segurança</h2><div class="item"><p class="tag" style="margin:0 0 10px">Os registros ficam salvos na sua conta. Você pode exportar uma cópia para guardar.</p>'+
@@ -560,7 +569,7 @@ $("view").addEventListener("change",function(e){
   if(tab==="plano"){
     if(t.id==="impFile"){if(t.files&&t.files[0])importar(t.files[0]);return}
     var sb=t.closest("[data-supl]");
-    if(sb){var su=draft.supl.filter(function(q){return q.id===sb.dataset.supl})[0];if(!su)return;
+    if(sb){var su=(draft[sb.dataset.list]||[]).filter(function(q){return q.id===sb.dataset.supl})[0];if(!su)return;
       if(ds.sd!==undefined){var di=+ds.sd;su.dias=(su.dias||[]).filter(function(q){return q!==di});if(t.checked)su.dias.push(di)}
       else if(ds.sf)su[ds.sf]=t.value.trim();
       markDirty();return}
@@ -585,9 +594,9 @@ $("view").addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   var ds=b.dataset;
   if(tab==="plano"){
-    if(ds.sdel){if(confirm("Remover este suplemento do plano?")){draft.supl=draft.supl.filter(function(q){return q.id!==ds.sdel});planDirty=true;render()}return}
-    if(ds.sadd){if(!draft.supl)draft.supl=[];draft.supl.push({id:"s"+Date.now(),n:"",o:"",t:"08:00",dias:[0,1,2,3,4,5,6]});planDirty=true;render();
-      var sl=document.querySelectorAll("[data-supl]");if(sl.length)sl[sl.length-1].scrollIntoView({behavior:"smooth",block:"center"});return}
+    if(ds.sdel){if(confirm("Remover este item do plano?")){draft[ds.list]=(draft[ds.list]||[]).filter(function(q){return q.id!==ds.sdel});planDirty=true;render()}return}
+    if(ds.sadd){var lk=ds.sadd;if(!draft[lk])draft[lk]=[];draft[lk].push({id:(lk==="supl"?"s":"t")+Date.now(),n:"",o:"",t:"08:00",dias:lk==="supl"?[0,1,2,3,4,5,6]:[]});planDirty=true;render();
+      var sl=document.querySelectorAll('[data-list="'+lk+'"][data-supl]');if(sl.length)sl[sl.length-1].scrollIntoView({behavior:"smooth",block:"center"});return}
     if(ds.del){if(confirm("Remover esta refeição do plano?")){draft.meals=draft.meals.filter(function(m){return m.id!==ds.del});planDirty=true;render()}}
     else if(ds.add){draft.meals.push({id:"m"+Date.now(),t:"23:00",n:"Nova refeição",txt:"",c:0,p:0,g:0});planDirty=true;render();
       var all=document.querySelectorAll("[data-meal]");if(all.length)all[all.length-1].scrollIntoView({behavior:"smooth",block:"center"})}
@@ -611,7 +620,7 @@ $("view").addEventListener("click",function(e){
   if(ds.k){
     var v=+ds.v;
     if(ds.k==="m"){if(d.m[ds.id]===v)delete d.m[ds.id];else d.m[ds.id]=v}
-    else if(ds.k==="s"){if(!d.s)d.s={};if(d.s[ds.id]===v)delete d.s[ds.id];else d.s[ds.id]=v}
+    else if(ds.k==="s"||ds.k==="t"){var mk=ds.k;if(!d[mk])d[mk]={};if(d[mk][ds.id]===v)delete d[mk][ds.id];else d[mk][ds.id]=v}
     else{if(d.ex===v)delete d.ex;else d.ex=v}
   } else if(ds.w){d.agua=Math.max(0,(d.agua||0)+(+ds.w))}
   else if(ds.s){
