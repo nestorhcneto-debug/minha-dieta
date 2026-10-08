@@ -15,18 +15,18 @@
 :root{
   --bg:#f2f4f9; --card:#ffffff; --ink:#111827; --soft:#5a6478; --line:#dfe4ee;
   --ok:#0b9a55; --okbg:#d5f6e3; --no:#e02d3c; --nobg:#ffe0e2; --acc:#ffb703; --blank:#d5dbe7; --on:#ffffff;
-  --food:#f97316; --sub:#e8590c; --subbg:#ffe4d0; --supl:#14b8a6; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
+  --food:#f97316; --sub:#e8590c; --subbg:#ffe4d0; --subok:#3dbb78; --supl:#14b8a6; --gym:#8b5cf6; --water:#0ea5e9; --sleep:#6366f1; --macro:#ec4899;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0b0f17; --card:#151b27; --ink:#f3f6fb; --soft:#9aa6ba; --line:#263044;
-    --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408;
+    --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408; --subok:#8ef0b9;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0b0f17; --card:#151b27; --ink:#f3f6fb; --soft:#9aa6ba; --line:#263044;
-  --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408;
+  --ok:#2fdc80; --okbg:#0e3b25; --no:#ff6166; --nobg:#4a161b; --acc:#ffc233; --blank:#2b3549; --on:#06130b; --sub:#ff8a3d; --subbg:#4a2408; --subok:#8ef0b9;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -120,6 +120,7 @@ button{border-radius:12px}
 .grp .item.sub:not(.ok):not(.no){border-left-color:var(--sub)}
 .item.sub .mark .n[aria-pressed="true"]{background:var(--sub);border-color:var(--sub);color:var(--on)}
 .a{color:var(--sub);font-weight:600}
+.scroll .a{color:var(--subok)}
 .scroll table{font-size:.8rem}
 .scroll th,.scroll td{padding:7px 2px}
 .scroll th:first-child,.scroll td:first-child{padding-left:8px}
@@ -496,8 +497,7 @@ function renderReport(){
     '<h2>Dia a dia</h2><div class="scroll"><table><thead><tr><th>Dia</th><th>Refeições<br>✓ · ↔ · ✗</th><th>Supl.</th><th>Treino</th><th>Água</th><th>Sono</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="tnote">Refeições: ✓ feitas · ↔ substituídas · ✗ não realizadas.</p>';
   h+='<h2>Macronutrientes</h2>';
   if(nM){
-    h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.')+
-       macCard(mt,'Total ingerido no período (valores estimados).');
+    h+=macCard({c:mt.c/nM,p:mt.p/nM,g:mt.g/nM,kcal:Math.round(mt.kcal/nM)},'Média por dia, em '+nM+(nM===1?' dia registrado':' dias registrados')+'. Plano: '+PLAN.c+' g / '+PLAN.p+' g / '+PLAN.g+' g.');
   }
   h+='<div class="scroll"><table><thead><tr><th>Dia</th><th>Carbo</th><th>Prot.</th><th>Gord.</th><th>kcal</th></tr></thead><tbody>'+mrows+'</tbody></table></div>';
   $("view").innerHTML=h;
