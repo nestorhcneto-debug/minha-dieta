@@ -225,6 +225,15 @@ const SEED=[
  {tag:"Peito, tríceps e ombro",warm:"Alongamento de peitoral · mobilidade de ombro · mobilidade torácica",ex:[
   X("Flexão de braço com miniband","Pushups"),X("Cross over","Cable_Crossover"),X("Supino inclinado com halteres","Incline_Dumbbell_Press"),X("Tríceps no banco com carga","Weighted_Bench_Dip"),X("Tríceps unilateral no cross + bilateral","Triceps_Pushdown"),X("Desenvolvimento Arnold","Arnold_Dumbbell_Press"),X("Elevação frontal alternada","Front_Dumbbell_Raise"),X("Mountain climber + sprawl","Mountain_Climbers","40 s por série")]}
 ];
+const SEED_L=[
+ {tag:"Costas e bíceps",warm:"2×12 ou 30 s: mobilidade torácica deitada · mobilidade de ombro · Y e W com miniband",ex:[
+  X("Remada baixa supinada","Seated_Cable_Rows"),X("Pulldown com corda","Rope_Straight-Arm_Pulldown"),X("Puxada aberta no cross","Wide-Grip_Lat_Pulldown"),X("Rosca direta","Barbell_Curl"),X("Rosca com corda no cross","Cable_Hammer_Curls_-_Rope_Attachment"),X("Abdominal remador + prancha","Jackknife_Sit-Up"),X("Perdigueiro isométrico","","30 s por série")]},
+ {tag:"Pernas",warm:"2×12 ou 30 s: 90/90 · alongamento de posterior com corda · borboleta · mobilidade de tornozelo",ex:[
+  X("Agachamento com miniband","Bodyweight_Squat"),X("Leg press","Leg_Press"),X("Extensora unilateral","Single-Leg_Leg_Extension"),X("Adutora","Thigh_Adductor"),X("Elevação pélvica unilateral (banco)","Single_Leg_Glute_Bridge"),X("Abdução de quadril com miniband","Side_Leg_Raises"),X("Flexora","Seated_Leg_Curl"),X("Panturrilha na máquina","Standing_Calf_Raises")]},
+ {tag:"Peito, tríceps e ombro",warm:"2×12 ou 30 s: alongamento de peitoral com braço flexionado · rotação externa de ombro · side to side na parede",ex:[
+  X("Supino reto com halteres","Dumbbell_Bench_Press"),X("Crucifixo inclinado","Incline_Dumbbell_Flyes"),X("Tríceps pulley","Triceps_Pushdown"),X("Tríceps testa no cross com corda","Cable_Rope_Overhead_Triceps_Extension"),X("Elevação lateral","Side_Lateral_Raise"),X("Remada alta unilateral","Standing_Dumbbell_Upright_Row")]}
+];
+const SEEDS={nestorneto:SEED,lorenarodrigues:SEED_L};
 const LET="ABCDEFGHIJKL",MSG=["Treino pago!","Mais um na conta!","Missão cumprida!","Constância vence!","Mandou muito bem!"];
 const $=id=>document.getElementById(id);
 const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -263,7 +272,7 @@ function renderHist(){
   $("pk").innerHTML=G.ficha.map((t,i)=>`<option value="${i}">Treino ${LET[i]} · ${esc(t.tag)}</option>`).join("");
   if(!$("pd").value){const y=new Date(Date.now()-864e5);$("pd").value=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0")}
   $("next").innerHTML=`Próximo treino: <b>Treino ${LET[n]} · ${esc(G.ficha[n].tag)}</b><small>${H.length?"Último: Treino "+esc(H[0].k)+(H[0].tag?" ("+esc(H[0].tag)+")":"")+", "+dia(H[0].t):"Nenhum treino registrado ainda."}</small>`;
-  $("hist").innerHTML=H.length?H.slice(0,20).map(h=>`<details class="h"><summary><b>Treino ${esc(h.k)}</b> · ${dia(h.t)}<span>${fmt(h.sec)} · ${h.kcal} kcal · ${h.st} séries</span></summary><ul>${h.ex.map(x=>`<li>${esc(x.n)} <span>· ${x.s}/${x.of}${x.c?" · "+esc(x.c):""}</span></li>`).join("")}</ul></details>`).join(""):'<div class="fine">Nenhum treino finalizado ainda. Ao tocar em Finalizar treino, ele aparece aqui com os exercícios, séries e cargas.</div>';
+  $("hist").innerHTML=H.length?H.slice(0,20).map(h=>`<details class="h"><summary><b>Treino ${esc(h.k)}</b> · ${dia(h.t)}<span>${fmt(h.sec)} · ${h.kcal} kcal · ${h.st} séries</span></summary><ul>${h.ex.map(x=>`<li>${esc(x.n)} <span>· ${x.s}/${x.of}${x.c?" · "+esc(x.c):""}</span></li>`).join("")}</ul><button type="button" class="lnk" data-del="${h.id}">Excluir este treino</button></details>`).join(""):'<div class="fine">Nenhum treino finalizado ainda. Ao tocar em Finalizar treino, ele aparece aqui com os exercícios, séries e cargas.</div>';
 }
 function audio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume()}catch(e){}try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}}
 function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();[0,.25,.5].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+t+.18);o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.2)})}catch(e){}
@@ -345,6 +354,9 @@ $("fin").onclick=finish;$("reset").onclick=reset;$("novo").onclick=reset;
 $("volta").onclick=()=>{$("end").hidden=true};
 $("edit").onclick=openEd;$("montar").onclick=openEd;
 $("sair").onclick=()=>fb.auth().signOut();
+$("hist").onclick=e=>{const b=e.target.closest("[data-del]");if(!b)return;
+  if(!b.dataset.sure){b.dataset.sure=1;b.textContent="Toque de novo para confirmar a exclusão";return}
+  G.hist=G.hist.filter(h=>String(h.id)!==b.dataset.del);saveG();if(!S.start)S.tab=nextT();render();renderHist()};
 $("padd").onclick=()=>{const d=$("pd").value,t=+$("pk").value,min=Math.min(300,Math.max(1,+$("pm").value||60));if(!d||!G.ficha[t])return;
   const ts=new Date(d+"T18:00:00").getTime();let n=0;const xs=G.ficha[t].ex.map((x,i)=>{const k=sets(t,i);n+=k;return {n:x.n,s:k,of:k,c:tbp(x)?"":x.c||""}});
   G.hist.push({id:ts,t:ts,k:LET[t],tag:G.ficha[t].tag,sec:min*60,kcal:Math.round(5*(+G.kg||80)*min/60),st:n,ex:xs});G.hist.sort((a,b)=>b.t-a.t);G.hist=G.hist.slice(0,60);
@@ -396,7 +408,7 @@ async function openUser(id,p,adm){
   uref=ref;uid=id;G={ficha:[],hist:[],kg:80,rest:60};
   if(data){if(Array.isArray(data.ficha))G.ficha=data.ficha;if(Array.isArray(data.hist))G.hist=data.hist;if(+data.kg>0)G.kg=+data.kg;if([45,60,90].indexOf(data.rest)>=0)G.rest=data.rest}
   G.ficha.forEach(t=>{if(!Array.isArray(t.ex))t.ex=[]});
-  const seeded=!data&&p.login===SEED_LOGIN;if(seeded)G.ficha=JSON.parse(JSON.stringify(SEED));
+  const sd=SEEDS[p.login],seeded=!!sd&&!G.ficha.length;if(seeded)G.ficha=JSON.parse(JSON.stringify(sd));
   S={tab:0,done:{},start:0,end:0};try{Object.assign(S,JSON.parse(localStorage.getItem("treino-sessao-"+uid)||"{}"))}catch(e){}
   if(!S.start||S.end){S.done={};S.start=0;S.end=0;S.tab=nextT()}
   D=null;OPEN=-1;TB=null;restEnd=0;$("pd").value="";aMsg("");
