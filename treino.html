@@ -132,11 +132,19 @@ img{max-width:100%}
   <p id="lmsg" role="alert"></p>
   <a href="index.html">Voltar ao Minha Dieta</a>
 </form>
-<div id="adm" class="center" hidden>
-  <h1>Meu Treino</h1>
-  <div>Você está no login de administrador, que não tem ficha de treino. Para ver ou montar um treino, saia e entre com o login do paciente.</div>
-  <a href="index.html">Voltar ao painel do Minha Dieta</a>
-  <button class="btn ghost" id="admsair" type="button">Sair e entrar com outro login</button>
+<div id="adm" class="wrap" hidden>
+  <header><div><h1>Alunos</h1><div class="sub">Administração do Meu Treino</div></div></header>
+  <div class="top"><a href="index.html">← Minha Dieta</a><button id="admsair" type="button">Sair</button></div>
+  <form id="aform" class="ed">
+    <b>Novo aluno</b>
+    <label>Nome<input id="nNome" type="text" maxlength="80" required></label>
+    <label>Login (sem espaços, ex.: maria.silva)<input id="nLogin" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" required></label>
+    <label>Senha (mínimo de 6 caracteres)<input id="nPw" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" minlength="6" required></label>
+    <button class="btn" id="criar" type="submit">Criar acesso</button>
+  </form>
+  <div id="amsg" class="fine" role="status"></div>
+  <h2>Alunos cadastrados</h2>
+  <div id="plist" style="display:flex;flex-direction:column;gap:8px"></div>
 </div>
 <div class="wrap" id="app" hidden>
   <header>
@@ -144,6 +152,7 @@ img{max-width:100%}
     <div class="clock"><small>Tempo total</small><span id="total">00:00</span></div>
   </header>
   <div class="top"><a href="index.html">← Minha Dieta</a><button id="edit" type="button">Editar ficha</button><button id="sair" type="button">Sair</button></div>
+  <div class="next" id="asAdm" hidden><span id="asTxt"></span><div class="row" style="margin-top:8px"><button class="sm" id="voltaAdm" type="button">← Voltar aos alunos</button></div></div>
   <div id="st" role="status"></div>
   <div id="empty" hidden>
     <h2>Sua ficha ainda está vazia</h2>
@@ -163,6 +172,15 @@ img{max-width:100%}
     <div class="fine">Toque no nome do exercício para ver as fotos e anotar a carga. Toque nas bolinhas ao terminar cada série e o descanso começa sozinho. Ficha, cargas e relatório ficam salvos na sua conta.</div>
     <h2>Últimos treinos</h2>
     <div id="hist"></div>
+    <details class="h" id="past"><summary>Registrar treino anterior</summary>
+      <div class="ed" style="border:0;padding:10px 0 0">
+        <label>Data<input type="date" id="pd"></label>
+        <label>Treino<select id="pk"></select></label>
+        <label>Duração (minutos)<input type="number" id="pm" min="1" max="300" value="60"></label>
+        <button class="sm" id="padd" type="button">Adicionar ao relatório</button>
+        <div class="fine">Registra todos os exercícios do treino como feitos, com as cargas que estão na ficha.</div>
+      </div>
+    </details>
   </div>
   <div id="editor" hidden></div>
 </div>
@@ -242,6 +260,8 @@ function render(){
 }
 function renderHist(){
   if(!G.ficha.length)return;const n=nextT(),H=G.hist;
+  $("pk").innerHTML=G.ficha.map((t,i)=>`<option value="${i}">Treino ${LET[i]} · ${esc(t.tag)}</option>`).join("");
+  if(!$("pd").value){const y=new Date(Date.now()-864e5);$("pd").value=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0")}
   $("next").innerHTML=`Próximo treino: <b>Treino ${LET[n]} · ${esc(G.ficha[n].tag)}</b><small>${H.length?"Último: Treino "+esc(H[0].k)+(H[0].tag?" ("+esc(H[0].tag)+")":"")+", "+dia(H[0].t):"Nenhum treino registrado ainda."}</small>`;
   $("hist").innerHTML=H.length?H.slice(0,20).map(h=>`<details class="h"><summary><b>Treino ${esc(h.k)}</b> · ${dia(h.t)}<span>${fmt(h.sec)} · ${h.kcal} kcal · ${h.st} séries</span></summary><ul>${h.ex.map(x=>`<li>${esc(x.n)} <span>· ${x.s}/${x.of}${x.c?" · "+esc(x.c):""}</span></li>`).join("")}</ul></details>`).join(""):'<div class="fine">Nenhum treino finalizado ainda. Ao tocar em Finalizar treino, ele aparece aqui com os exercícios, séries e cargas.</div>';
 }
@@ -325,6 +345,30 @@ $("fin").onclick=finish;$("reset").onclick=reset;$("novo").onclick=reset;
 $("volta").onclick=()=>{$("end").hidden=true};
 $("edit").onclick=openEd;$("montar").onclick=openEd;
 $("sair").onclick=()=>fb.auth().signOut();
+$("padd").onclick=()=>{const d=$("pd").value,t=+$("pk").value,min=Math.min(300,Math.max(1,+$("pm").value||60));if(!d||!G.ficha[t])return;
+  const ts=new Date(d+"T18:00:00").getTime();let n=0;const xs=G.ficha[t].ex.map((x,i)=>{const k=sets(t,i);n+=k;return {n:x.n,s:k,of:k,c:tbp(x)?"":x.c||""}});
+  G.hist.push({id:ts,t:ts,k:LET[t],tag:G.ficha[t].tag,sec:min*60,kcal:Math.round(5*(+G.kg||80)*min/60),st:n,ex:xs});G.hist.sort((a,b)=>b.t-a.t);G.hist=G.hist.slice(0,60);
+  saveG();if(!S.start)S.tab=nextT();$("past").open=false;render();renderHist()};
+/* ---------- administrador ---------- */
+let sec=null,PAC={};
+const aMsg=t=>{$("amsg").textContent=t};
+function showAdmin(){uid=null;if(unsub){unsub();unsub=null}$("rest").hidden=true;$("end").hidden=true;show("adm");
+  unsub=fb.firestore().collection("pacientes").onSnapshot(sn=>{PAC={};const a=[];sn.forEach(d=>{PAC[d.id]=d.data()||{};a.push([d.id,PAC[d.id]])});a.sort((x,y)=>String(x[1].nome||"").localeCompare(String(y[1].nome||"")));
+    $("plist").innerHTML=a.length?a.map(([id,v])=>`<div class="ed"><div><b>${esc(v.nome)}</b> · ${esc(v.login)} · ${v.ativo===true?"ativo":'<span style="color:var(--bad)">bloqueado</span>'}</div><div class="row"><button class="sm" type="button" data-fic="${esc(id)}">Ficha e treinos</button><button class="sm" type="button" data-tog="${esc(id)}">${v.ativo===true?"Bloquear":"Reativar"}</button></div></div>`).join(""):'<div class="fine">Nenhum aluno cadastrado ainda.</div>'},
+    ()=>{$("plist").innerHTML='<div class="fine">Não foi possível carregar a lista de alunos.</div>'})}
+$("plist").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.tog){const v=PAC[b.dataset.tog];fb.firestore().collection("pacientes").doc(b.dataset.tog).update({ativo:!(v&&v.ativo===true)}).catch(()=>aMsg("Não foi possível alterar o acesso."))}
+  else if(b.dataset.fic){aMsg("Abrindo…");openUser(b.dataset.fic,PAC[b.dataset.fic]||{},true)}};
+$("voltaAdm").onclick=showAdmin;
+$("aform").addEventListener("submit",async e=>{e.preventDefault();const nome=$("nNome").value.trim(),login=$("nLogin").value.trim().toLowerCase(),pw=$("nPw").value;
+  if(!/^[a-z0-9._-]+$/.test(login)){aMsg("Use só letras, números, ponto, hífen ou sublinhado no login.");return}
+  $("criar").disabled=true;aMsg("Criando…");
+  try{if(!sec){sec=fb.initializeApp(CFG,"cadastro");await sec.auth().setPersistence(fb.auth.Auth.Persistence.NONE)}
+    const cred=await sec.auth().createUserWithEmailAndPassword(toEmail(login),pw);
+    await fb.firestore().collection("pacientes").doc(cred.user.uid).set({nome,login,ativo:true,criado:Date.now()});await sec.auth().signOut();
+    aMsg("Acesso criado para "+nome+".");$("aform").reset()}
+  catch(err){const c=err&&err.code;aMsg(c==="auth/email-already-in-use"?"Esse login já existe.":c==="auth/weak-password"?"A senha precisa ter pelo menos 6 caracteres.":"Não foi possível criar o acesso. Verifique a internet e tente de novo.")}
+  $("criar").disabled=false});
 
 /* ---------- login (mesmas contas do Minha Dieta) ---------- */
 const OFF="Seu acesso está desativado. Fale com quem administra o app.";
@@ -334,24 +378,32 @@ function showLogin(m){if(unsub){unsub();unsub=null}uid=null;$("rest").hidden=tru
 async function enter(user){
   show("boot");
   try{await user.getIdToken(true)}catch(e){if(blocked(e)){pendingMsg=OFF;fb.auth().signOut();return}}
-  if(user.email===toEmail(ADMIN)){show("adm");return}
-  const pref=fb.firestore().collection("pacientes").doc(user.uid);let p=null,data=null;
+  if(user.email===toEmail(ADMIN)){showAdmin();return}
+  const pref=fb.firestore().collection("pacientes").doc(user.uid);let p=null;
   try{const ps=await pref.get();p=ps.exists?ps.data():null}
   catch(e){pendingMsg="Não foi possível verificar seu acesso. Verifique a internet e tente de novo.";fb.auth().signOut();return}
   if(!p||p.ativo!==true){pendingMsg=OFF;fb.auth().signOut();return}
-  uref=fb.firestore().collection("users").doc(user.uid);
-  try{const r=await uref.get();data=r.exists?(r.data()||{}).gym:null}
-  catch(e){pendingMsg=e&&e.code==="permission-denied"?"Acesso negado. Fale com quem administra o app.":"Não foi possível carregar seus dados. Verifique a internet e tente de novo.";fb.auth().signOut();return}
-  uid=user.uid;G={ficha:[],hist:[],kg:80,rest:60};
+  if(await openUser(user.uid,p,false))
+    unsub=pref.onSnapshot(sn=>{const v=sn.exists?sn.data():null;if(!sn.metadata.fromCache&&(!v||v.ativo!==true)){pendingMsg=OFF;fb.auth().signOut()}},()=>{pendingMsg=OFF;fb.auth().signOut()});
+}
+async function openUser(id,p,adm){
+  const ref=fb.firestore().collection("users").doc(id);let data=null;
+  try{const r=await ref.get();data=r.exists?(r.data()||{}).gym:null}
+  catch(e){const den=e&&e.code==="permission-denied";
+    if(adm){aMsg(den?"As regras do banco de dados ainda não deixam o administrador abrir a ficha dos alunos.":"Não foi possível carregar os dados do aluno. Verifique a internet.");return false}
+    pendingMsg=den?"Acesso negado. Fale com quem administra o app.":"Não foi possível carregar seus dados. Verifique a internet e tente de novo.";fb.auth().signOut();return false}
+  if(adm&&unsub){unsub();unsub=null}
+  uref=ref;uid=id;G={ficha:[],hist:[],kg:80,rest:60};
   if(data){if(Array.isArray(data.ficha))G.ficha=data.ficha;if(Array.isArray(data.hist))G.hist=data.hist;if(+data.kg>0)G.kg=+data.kg;if([45,60,90].indexOf(data.rest)>=0)G.rest=data.rest}
   G.ficha.forEach(t=>{if(!Array.isArray(t.ex))t.ex=[]});
   const seeded=!data&&p.login===SEED_LOGIN;if(seeded)G.ficha=JSON.parse(JSON.stringify(SEED));
   S={tab:0,done:{},start:0,end:0};try{Object.assign(S,JSON.parse(localStorage.getItem("treino-sessao-"+uid)||"{}"))}catch(e){}
   if(!S.start||S.end){S.done={};S.start=0;S.end=0;S.tab=nextT()}
-  D=null;OPEN=-1;TB=null;$("who").textContent=(p.nome||p.login||"")+" · mesma conta do Minha Dieta";st("");
+  D=null;OPEN=-1;TB=null;restEnd=0;$("pd").value="";aMsg("");
+  $("who").textContent=adm?"Aluno: "+(p.nome||p.login||""):(p.nome||p.login||"")+" · mesma conta do Minha Dieta";
+  $("asAdm").hidden=!adm;$("asTxt").textContent=adm?"Você está como administrador, na ficha de "+(p.nome||p.login||"")+" ("+(p.login||"")+"). O que você alterar aqui fica salvo na conta do aluno.":"";st("");
   if(seeded)saveG();
-  unsub=pref.onSnapshot(sn=>{const v=sn.exists?sn.data():null;if(!sn.metadata.fromCache&&(!v||v.ativo!==true)){pendingMsg=OFF;fb.auth().signOut()}},()=>{pendingMsg=OFF;fb.auth().signOut()});
-  show("app");render();renderHist();tick();
+  show("app");render();renderHist();tick();return true;
 }
 $("login").addEventListener("submit",e=>{e.preventDefault();if(!fb)return;
   $("lmsg").textContent="";$("entrar").disabled=true;$("entrar").textContent="Entrando…";
