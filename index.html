@@ -37,6 +37,8 @@ h1{font-size:1.7rem;line-height:1.1;margin:6px 0 2px;font-weight:700}
 h2{font-size:1.15rem;margin:26px 0 10px;font-weight:700}
 .status{font-size:.82rem;color:var(--soft);margin:0 0 14px}
 button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 12px;min-height:42px}
+.startgym{display:block;text-align:center;text-decoration:none;font-weight:600;background:var(--gym);color:#fff;border-radius:10px;padding:12px;margin:0 0 10px}
+.startgym:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 button:disabled{opacity:.35;cursor:default}
 .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:16px}
@@ -411,6 +413,7 @@ function renderDay(){
   var tp=treinoDia(cur),tv=d.t||{},tdone=tp.filter(function(x){return tv[x.id]===1}).length;
   var xa=d.xa||[];
   h+=secH("s-gym","Treino",(tp.length?tdone+" de "+tp.length:"")+(xa.length?(tp.length?" · ":"")+"+"+xa.length+(xa.length>1?" adicionais":" adicional"):""));
+  h+='<a class="startgym" href="treino.html">Iniciar treino</a>';
   if(tp.length)tp.forEach(function(x){var v=tv[x.id];
     h+='<div class="item'+cls(v)+'"><div class="head"><span class="time">'+esc(x.t)+'</span><span class="name">'+esc(x.n)+'</span>'+
       (x.o?'<span class="tag">'+esc(x.o)+'</span>':'')+'</div>'+markHTML("t",x.id,v)+'</div>'});
